@@ -1,0 +1,1727 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0A1F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZRL Overlay">
+<link rel="apple-touch-icon" href="zrl-icon.png">
+<link rel="icon" type="image/png" href="zrl-icon.png">
+<title>ZRL Auktion – Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+:root{--night:#0B0A1F;--panel:#151335;--line:#2C2866;--line2:#39347A;--text:#F2F0FF;--body:#B9B6E0;--muted:#8582B5;--cyan:#3FD0FF;--blue:#2F6BFF;--violet:#7A3CFF;--magenta:#E23CFF;--pink:#F59BFF;--good:#4BE3A8;--bad:#FF6F9C;
+--grad:linear-gradient(90deg,#2F6BFF 0%,#7A3CFF 50%,#E23CFF 100%);--gradText:linear-gradient(90deg,#3FD0FF 0%,#8A5CFF 50%,#E23CFF 100%);
+--cond:'Barlow Condensed','Arial Narrow','Roboto Condensed','DejaVu Sans Condensed',Arial,sans-serif;--sans:'Barlow','Segoe UI',Roboto,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);color:var(--text)}
+html.mode-overlay,body.mode-overlay{background:transparent!important;overflow:hidden}
+
+/* ================= OVERLAY ================= */
+.ov-root{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.ov-root.preview{position:relative;inset:auto;width:100%;height:0}
+.ov-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;transition:opacity .5s;font-family:var(--sans);color:var(--text)}
+.ov-stage.hidden{opacity:0}
+.ov-auction{position:absolute;inset:0;transition:opacity .5s}
+.ov-off{opacity:0!important}
+.ov-glow{filter:drop-shadow(0 0 22px rgba(122,60,255,.45))}
+.ov-cut{clip-path:polygon(0 0,calc(100% - 26px) 0,100% 26px,100% 100%,26px 100%,0 calc(100% - 26px))}
+.ov-box{position:relative;background:linear-gradient(180deg,rgba(28,24,70,.95),rgba(11,10,31,.95))}
+.ov-box::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,#3FD0FF,#7A3CFF,#E23CFF)}
+
+.ov-brand{position:absolute;left:48px;top:36px;transition:opacity .4s}
+.ov-brand .ov-box{display:flex;align-items:center;gap:18px;height:76px;padding:0 30px}
+.ov-logo{font:800 italic 56px/1.1 var(--cond);background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:6px}
+.ov-sep{width:2px;height:38px;background:var(--line2)}
+.ov-sub{font:700 italic 32px/1 var(--cond);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.ov-lotno{font:700 20px/1 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(63,208,255,.5);border-radius:6px;padding:8px 12px;margin-left:4px;white-space:nowrap}
+.ov-lotno:empty{display:none}
+
+.ov-statswrap{position:absolute;right:48px;top:36px;transition:opacity .4s}
+.ov-stats{display:flex;align-items:center;height:76px;padding:0 12px 0 18px}
+.ov-stat{display:flex;flex-direction:column;justify-content:center;padding:0 24px;border-left:1px solid var(--line2);height:50px}
+.ov-stat:first-child{border-left:0}
+.ov-stat .k{font:600 14px/1 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;white-space:nowrap}
+.ov-stat .v{font:800 italic 36px/1 var(--cond);white-space:nowrap}
+.ov-stat .v small{font-size:22px;color:var(--body);font-weight:700;margin-left:4px}
+
+.ov-poolwrap{position:absolute;left:48px;top:140px;width:452px;transition:opacity .4s,transform .4s}
+.ov-poolwrap.ov-off{transform:translateX(-30px)}
+.ov-pool{padding:22px 26px 24px 32px}
+.ov-pool h4{font:800 italic 30px/1 var(--cond);text-transform:uppercase}
+.ov-tierhead{display:flex;justify-content:space-between;align-items:baseline;font:600 14px/1 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.ov-tierhead b{font:800 italic 22px/1 var(--cond);letter-spacing:1px;background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:3px}
+.ov-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ov-chip{font:600 18px/1 var(--sans);padding:8px 10px;border-radius:6px;border:1px solid var(--line2);background:rgba(21,19,53,.85);white-space:nowrap}
+.ov-chip em{font-style:normal;font-weight:700;margin-left:6px;color:var(--cyan)}
+.ov-chip.cur{background:var(--grad);border-color:transparent;box-shadow:0 0 16px rgba(226,60,255,.7)}
+.ov-chip.sold{opacity:.55}
+.ov-chip.later{border-style:dashed;color:var(--body)}
+.ov-chip.later em{color:var(--muted)}
+
+.ov-bg{position:absolute;inset:0;background:#0B0A1F center/cover no-repeat;opacity:0;transition:opacity .8s}
+.ov-bg::after{content:'';position:absolute;inset:0;background:#0B0A1F;opacity:var(--dim,0)}
+.ov-bg.on{opacity:1}
+.ov-root.has-bg .ov-reveal{background:radial-gradient(circle at 85% 0%,rgba(58,23,132,.74),rgba(11,10,31,.82) 58%)}
+.ov-profwrap{position:absolute;right:48px;top:140px;width:540px;transition:opacity .45s,transform .45s}
+.ov-profwrap.ov-off{transform:translateX(34px)}
+.ov-prof{padding:24px 30px 26px 36px;max-height:540px;overflow:hidden}
+.ov-prof h4{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.pf-t{font:800 italic 30px/1 var(--cond);text-transform:uppercase;flex:none}
+.pf-n{font:600 15px/1 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pf-rows{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:22px;row-gap:12px;margin-top:18px}
+.pf-k{font:600 14px/1 var(--sans);letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);white-space:nowrap;padding-top:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.pf-v{font:600 23px/1.25 var(--sans);color:var(--text);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pf-ex{margin-top:20px;padding-top:18px;border-top:1px solid var(--line2)}
+.pf-ex.solo{margin-top:16px;padding-top:0;border-top:0}
+.pf-exh{display:flex;align-items:center;gap:9px;font:700 14px/1 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--body)}
+.pf-ex.rule .pf-exh{color:var(--pink)}
+.pf-exh svg{width:15px;height:15px;fill:currentColor;flex:none}
+.pf-logos{display:flex;gap:18px;margin-top:14px}
+.pf-team{display:flex;flex-direction:column;align-items:center;gap:9px;width:116px}
+.pf-team>span{font:600 15px/1.15 var(--sans);color:var(--body);text-align:center;letter-spacing:.5px}
+.pf-logo{position:relative;width:100px;height:100px;border-radius:16px;background:radial-gradient(circle at 50% 35%,#221E52,#0E0C26);border:2px solid var(--line2);display:flex;align-items:center;justify-content:center}
+.pf-ex.rule .pf-logo{border-color:rgba(226,60,255,.7);box-shadow:0 0 18px rgba(226,60,255,.35)}
+.pf-logo img{max-width:76%;max-height:76%;object-fit:contain}
+.pf-logo b{font:800 italic 36px/1 var(--cond);letter-spacing:1px;padding-right:3px}
+.pf-logo i{position:absolute;right:-10px;top:-10px;width:34px;height:34px;border-radius:50%;background:var(--magenta);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(226,60,255,.8)}
+.pf-logo i svg{width:17px;height:17px;fill:#fff}
+.ov-profwrap.in .ov-prof{animation:pfIn .6s cubic-bezier(.2,1,.3,1)}
+@keyframes pfIn{0%{opacity:0;transform:translateX(24px)}100%{opacity:1;transform:none}}
+
+.ov-lowerwrap{position:absolute;left:48px;right:48px;bottom:40px;height:252px;transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .5s}
+.ov-lowerwrap.ov-off{transform:translateY(330px)}
+.ov-lower{position:absolute;inset:0;display:grid;grid-template-columns:232px minmax(0,1fr) 660px;background:linear-gradient(180deg,rgba(28,24,70,.96),rgba(11,10,31,.96))}
+.ov-topline{position:absolute;left:0;right:0;top:0;height:4px;background:var(--grad);z-index:2}
+.ov-tier{background:var(--grad);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ov-tier-l{font:800 italic 176px/.86 var(--cond);color:#fff;text-shadow:0 0 34px rgba(255,255,255,.35);padding-right:10px}
+.ov-tier-k{font:700 17px/1 var(--sans);letter-spacing:7px;text-transform:uppercase;color:rgba(255,255,255,.88);margin-top:12px;padding-left:7px}
+.ov-driver{padding:26px 36px 26px 40px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.ov-eyebrow{font:600 19px/1 var(--sans);letter-spacing:4px;text-transform:uppercase;color:var(--cyan);white-space:nowrap}
+.ov-name{font:800 italic 104px/1.1 var(--cond);text-transform:uppercase;white-space:nowrap;overflow:hidden;margin:8px 0 10px;padding-right:14px}
+.ov-starsrow{display:flex;align-items:center;gap:20px;min-height:28px}
+.ov-stars{display:flex;gap:4px}
+.st-wrap{position:relative;width:28px;height:28px;flex:none}
+.st-wrap svg{width:28px;height:28px;display:block}
+.st-half{position:absolute;left:0;top:0;width:14px;height:28px;overflow:hidden}
+.ov-meta{font:500 23px/1 var(--sans);color:var(--body);white-space:nowrap}
+.ov-bid{position:relative;border-left:1px solid var(--line2);display:flex;align-items:center;gap:26px;padding:0 40px}
+.ov-bidtext{flex:1;min-width:0}
+.ov-pill{display:inline-block;font:700 17px/1 var(--sans);letter-spacing:4px;text-transform:uppercase;padding:9px 14px;border-radius:6px;background:rgba(63,208,255,.12);color:var(--cyan);border:1px solid rgba(63,208,255,.45);white-space:nowrap}
+.ov-pill.hot{background:rgba(226,60,255,.16);color:var(--pink);border-color:rgba(226,60,255,.65)}
+.ov-pill.dim{background:rgba(133,130,181,.12);color:var(--body);border-color:var(--line2)}
+.ov-amount{font:800 italic 124px/1 var(--cond);margin-top:12px;white-space:nowrap;transform-origin:left center}
+.ov-amount span{font-size:50px;margin-left:12px;color:var(--body)}
+.ov-amount.small{font-size:62px;margin-top:18px;line-height:1.05}
+.ov-amount.small span{font-size:36px}
+.ov-amount.pop{animation:ovPop .7s cubic-bezier(.2,1.4,.4,1)}
+@keyframes ovPop{0%{transform:scale(1.25);text-shadow:0 0 40px #E23CFF}100%{transform:scale(1);text-shadow:0 0 0 transparent}}
+.ov-bidsub{font:600 18px/1.2 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:8px;white-space:nowrap;min-height:22px}
+.ov-bidsub svg{width:18px;height:18px;fill:var(--magenta);flex:none}
+.ov-ring{position:relative;width:170px;height:170px;flex:none;transition:opacity .3s}
+.ov-ring>svg{width:170px;height:170px;transform:rotate(-90deg);display:block}
+.ov-ring circle{fill:none;stroke-width:12}
+.ov-ring .trk{stroke:var(--line)}
+.ov-ring .prg{stroke-linecap:round;transition:stroke-dashoffset .12s linear}
+.ov-ringtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ov-ringtxt b{font:800 italic 64px/1 var(--cond);display:flex;align-items:center;justify-content:center;padding-right:4px}
+.ov-ringtxt b.mm{font-size:50px}
+.ov-ringtxt b svg{width:48px;height:48px;fill:var(--magenta)}
+.ov-ringtxt span{font:600 13px/1 var(--sans);letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.ov-ring.urgent b{color:var(--pink);animation:ovBlink 1s steps(2) infinite}
+@keyframes ovBlink{50%{opacity:.35}}
+.ov-ring.idle{opacity:.5}
+.ov-stamp{position:absolute;right:720px;top:-80px;font:800 italic 78px/1 var(--cond);text-transform:uppercase;color:#fff;padding:8px 30px 12px 26px;border:6px solid var(--magenta);border-radius:12px;background:rgba(60,12,80,.88);box-shadow:0 0 40px rgba(226,60,255,.75),inset 0 0 26px rgba(226,60,255,.45);transform:rotate(-7deg) scale(0);opacity:0}
+.ov-lowerwrap.sold .ov-stamp{animation:ovStamp .55s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes ovStamp{0%{transform:rotate(-7deg) scale(2.4);opacity:0}100%{transform:rotate(-7deg) scale(1);opacity:1}}
+.ov-lowerwrap.flash .ov-lower{animation:ovFlash .8s}
+@keyframes ovFlash{0%{box-shadow:inset 0 0 0 5px #E23CFF}100%{box-shadow:inset 0 0 0 0 transparent}}
+.ov-call{position:absolute;right:84px;bottom:318px;font:800 italic 46px/1 var(--cond);text-transform:uppercase;padding:14px 30px 16px 28px;background:var(--grad);clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));opacity:0;transform:translateY(20px)}
+.ov-call.on{animation:ovCall .45s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes ovCall{to{opacity:1;transform:none}}
+
+.ov-reveal{position:absolute;inset:0;background:radial-gradient(circle at 85% 0%,rgba(58,23,132,.95),rgba(11,10,31,.97) 58%);opacity:0;transition:opacity .6s}
+.ov-reveal.on{opacity:1}
+.rv-top{position:absolute;left:0;right:0;top:0;height:8px;background:var(--grad)}
+.rv-head{position:absolute;left:80px;right:80px;top:54px;display:flex;justify-content:space-between;align-items:flex-end}
+.rv-eyebrow{font:600 22px/1 var(--sans);letter-spacing:5px;color:var(--cyan);text-transform:uppercase;margin-bottom:12px}
+.rv-title{font:800 italic 108px/1.12 var(--cond);padding-top:10px;text-transform:uppercase;background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:14px}
+.rv-count{font:700 italic 42px/1 var(--cond);color:var(--body);text-transform:uppercase;padding-bottom:10px}
+.rv-grid{position:absolute;left:80px;right:80px;top:236px;bottom:52px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:22px}
+.rv-card{position:relative;background:linear-gradient(180deg,#1C1846,#110E2C);border:1px solid var(--line2);border-radius:14px;padding:18px 24px 16px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.rv-card.hidden{opacity:.55}
+.rv-card.hidden .rv-slot .n,.rv-card.hidden .rv-slot .p{color:var(--muted);letter-spacing:4px}
+.rv-card.new{border:2px solid var(--magenta);box-shadow:0 0 44px rgba(226,60,255,.6);animation:rvIn .9s cubic-bezier(.2,1.2,.4,1)}
+@keyframes rvIn{0%{transform:perspective(900px) rotateY(80deg) scale(.9);opacity:0}100%{transform:none;opacity:1}}
+.rv-team{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.rv-team .rv-logo{height:36px;width:auto;max-width:64px;object-fit:contain;flex:none;align-self:center;margin-right:-2px}
+.rv-team b{flex:1;min-width:0;font:800 italic 40px/1.05 var(--cond);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:4px}
+.rv-team span{font:700 17px/1 var(--sans);letter-spacing:3px;color:var(--muted);flex:none}
+.rv-slot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.rv-slot .n{font:600 25px/1.15 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rv-slot .p{font:800 italic 30px/1 var(--cond);color:var(--cyan);white-space:nowrap;padding-right:3px}
+.rv-slot.empty .n,.rv-slot.empty .p{color:var(--muted)}
+.rv-t{display:inline-block;font:800 italic 17px/1 var(--cond);padding:4px 7px 4px 6px;border-radius:4px;background:var(--grad);color:#fff;margin-right:10px;vertical-align:3px}
+.rv-rest{margin-top:auto;font:600 16px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;padding-top:8px}
+.rv-rest svg{width:16px;height:16px;fill:var(--muted)}
+.rv-sum{align-items:center;justify-content:center;text-align:center;border:2px solid transparent;background:linear-gradient(#150F36,#150F36) padding-box,var(--grad) border-box}
+.rv-sum .k{font:600 15px/1 var(--sans);letter-spacing:4px;text-transform:uppercase;color:var(--body)}
+.rv-sum b{font:800 italic 96px/1.1 var(--cond);background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding:8px 10px 4px}
+.rv-sum b.sm{font-size:44px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.rv-sum .v{font:800 italic 34px/1 var(--cond);color:var(--text);margin:4px 0 14px}
+
+/* Einrichtungsfenster im Overlay */
+.ov-setup{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,10,31,.78);opacity:0;pointer-events:none;transition:opacity .3s}
+.ov-setup.on{opacity:1;pointer-events:auto}
+.su-card{width:1060px;padding:56px 64px 46px;border-radius:24px;border:2px solid transparent;background:linear-gradient(#141137,#0E0C26) padding-box,var(--grad) border-box;box-shadow:0 0 80px rgba(122,60,255,.45)}
+.su-brand{font:800 italic 34px/1.15 var(--cond);text-transform:uppercase}
+.su-title{font:800 italic 84px/1.1 var(--cond);text-transform:uppercase;margin:10px 0 12px}
+.su-text{font:500 28px/1.45 var(--sans);color:var(--body)}
+.su-row{display:flex;gap:16px;margin:30px 0 18px}
+.su-input{flex:1;min-width:0;width:auto;font:800 italic 64px/1 var(--cond);letter-spacing:6px;text-transform:uppercase;padding:14px 24px;border-radius:14px;border:2px solid var(--line2);background:#0B0A1F;color:var(--text);outline:none}
+.su-input:focus{border-color:var(--magenta);box-shadow:none}
+.su-btn{flex:none;font:700 30px/1 var(--sans);padding:0 40px;border-radius:14px;border:0;background:var(--grad);color:#fff;cursor:pointer}
+.su-status{font:600 24px/1.45 var(--sans);color:var(--cyan);min-height:36px}
+.su-foot{font:500 22px/1.45 var(--sans);color:var(--muted);margin-top:14px}
+.su-link{font:600 22px/1 var(--sans);background:none;border:0;color:var(--pink);text-decoration:underline;cursor:pointer;padding:0;margin-left:6px}
+
+/* ================= STEUERUNG ================= */
+html.mode-control{background:#0B0A1F}
+body.mode-control{min-height:100vh;background:radial-gradient(circle at 100% 0%,#22104e 0%,#0B0A1F 45%) fixed;font-size:15px;line-height:1.4}
+.c-top{position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top);background:rgba(11,10,31,.97);border-bottom:1px solid var(--line)}
+.c-top::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--grad)}
+.c-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 16px 8px}
+.c-brand{font:800 italic 24px/1 var(--cond);text-transform:uppercase;letter-spacing:.3px}
+.grad{background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:3px}
+.c-head-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.c-sync{font:600 12px/1 var(--sans);padding:8px 10px;border-radius:20px;background:#1A1740;color:var(--muted);border:1px solid var(--line2);white-space:nowrap}
+.c-sync.ok{color:var(--good);border-color:rgba(75,227,168,.45)}
+.c-tabs{display:flex;gap:4px;padding:4px 12px 8px;overflow-x:auto}
+.c-tabs button{background:transparent;border:1px solid transparent;color:var(--body);padding:8px 12px;white-space:nowrap}
+.c-tabs button.on{background:#1A1740;border-color:var(--line2);color:var(--text)}
+.c-main{padding:14px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));max-width:1280px;margin:0 auto}
+.c-tab{display:none}.c-tab.on{display:block}
+.c-grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:880px){.c-grid2{grid-template-columns:minmax(0,1fr)}}
+.c-card{background:rgba(21,19,53,.92);border:1px solid var(--line);border-radius:12px;padding:14px 14px 16px;margin-bottom:14px}
+.c-card h3{font:700 italic 21px/1.1 var(--cond);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.c-card h3 small{font:600 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-style:normal;text-align:right}
+button{touch-action:manipulation;font:600 14px/1.2 var(--sans);color:var(--text);background:#221E52;border:1px solid var(--line2);border-radius:8px;padding:9px 13px;cursor:pointer;transition:border-color .15s,background .15s}
+button:hover{border-color:var(--violet)}
+button.primary{background:var(--grad);border-color:transparent;font-weight:700}
+button.primary:hover{filter:brightness(1.12)}
+button.big{padding:13px 18px;font-size:16px}
+button.danger{background:transparent;border-color:#6d2c55;color:#FF9CC0}
+button.armed{background:#6d1f4a!important;border-color:#ff6f9c!important;color:#fff!important}
+button.c-small{padding:7px 10px;font-size:13px}
+button:disabled{opacity:.4;cursor:not-allowed}
+input,select,textarea{font:500 16px/1.3 var(--sans);color:var(--text);background:#0E0C26;border:1px solid var(--line2);border-radius:8px;padding:9px 10px;width:100%;outline:none}
+select option,select optgroup{background:#0E0C26;color:var(--text)}
+input:focus,select:focus,textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(122,60,255,.25)}
+textarea{font-family:ui-monospace,Consolas,monospace;font-size:13px;resize:vertical}
+label{display:block;font:600 12px/1.3 var(--sans);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+label input,label select{margin-top:5px;text-transform:none;letter-spacing:0}
+.c-check{display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font:500 15px/1.3 var(--sans);color:var(--text);margin-top:10px;cursor:pointer}
+.c-check input{width:18px;height:18px;margin:0;accent-color:#7A3CFF;flex:none}
+.c-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.c-mt{margin-top:12px}
+.c-form2{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.c-form3{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.c-hint{font-size:13px;color:var(--muted);margin:8px 0}
+.c-hint b{color:var(--body)}
+.c-stat{font-size:13px;color:var(--muted);margin-top:12px}
+.c-preview{border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#24345a 0%,#3b2552 50%,#1b1d35 100%)}
+.c-lothead{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:#100E28;border:1px solid var(--line)}
+.c-lothead b{display:block;font:800 italic 30px/1.05 var(--cond);text-transform:uppercase}
+.c-lothead small{color:var(--body);font-size:13px}
+.c-tierbadge{flex:none;width:52px;height:52px;border-radius:8px;background:var(--grad);display:flex;align-items:center;justify-content:center;font:800 italic 36px/1 var(--cond);padding-right:3px}
+.c-phase{margin-left:auto;font:700 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;padding:6px 9px;border-radius:6px;border:1px solid var(--line2);color:var(--body);white-space:nowrap}
+.ph-opening,.ph-bidding{color:var(--cyan);border-color:rgba(63,208,255,.5)}
+.ph-sold{color:var(--pink);border-color:rgba(226,60,255,.6)}
+.c-timerrow{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:14px 0 10px}
+.c-timer{font:800 italic 60px/1 var(--cond);min-width:110px}
+.c-timer.urgent{color:var(--pink)}
+.c-sub{color:var(--body)}
+.c-sub b{color:var(--text)}
+.c-result{margin:14px 0 6px;padding:14px;border-radius:10px;background:linear-gradient(90deg,rgba(47,107,255,.18),rgba(226,60,255,.18));border:1px solid rgba(226,60,255,.4)}
+.c-result span{display:block;color:var(--body);font-size:13px}
+.c-result b{display:block;font:800 italic 34px/1.1 var(--cond);text-transform:uppercase;margin:2px 0}
+.c-teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:6px;margin-bottom:10px}
+.c-team{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:8px 10px;min-height:52px}
+.c-team b{font-weight:700;font-size:14px}
+.c-team small{font-size:11.5px;color:var(--muted);font-weight:500}
+.c-team.sel{background:linear-gradient(90deg,rgba(47,107,255,.5),rgba(226,60,255,.5));border-color:var(--magenta)}
+.c-team.sel small{color:var(--text)}
+.c-team.lead{box-shadow:inset 0 0 0 2px var(--cyan)}
+.c-team.dim{opacity:.4}
+.c-bidrow{display:grid;grid-template-columns:1fr auto;gap:8px}
+.c-bidrow input{font:800 italic 26px/1 var(--cond);padding:8px 12px}
+.c-quick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.c-quick button{flex:1;min-width:52px;padding:7px}
+.c-msg{min-height:22px;margin-top:10px;font-size:14px}
+.c-msg.good{color:var(--good)}.c-msg.bad{color:var(--bad)}
+.c-log{display:flex;flex-direction:column;gap:4px;max-height:360px;overflow:auto}
+.c-logrow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 9px;border-radius:6px;background:#100E28;font-size:13.5px}
+.c-logrow .a{font:800 italic 20px/1 var(--cond)}
+.c-logrow.bad .a{text-decoration:line-through;color:var(--bad)}
+.c-logrow em{display:block;font-style:normal;color:var(--bad);font-size:12px}
+.c-logrow time{color:var(--muted);font-variant-numeric:tabular-nums}
+.c-logrow small{color:var(--muted)}
+.c-empty{color:var(--muted);font-size:13.5px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11px/1.2 var(--sans);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td small{color:var(--muted)}
+.c-tablewrap{overflow-x:auto}
+.tag{display:inline-block;font:700 11px/1 var(--sans);letter-spacing:1px;text-transform:uppercase;padding:4px 7px;border-radius:5px;border:1px solid var(--line2);color:var(--body);white-space:nowrap}
+.tag.offen{color:var(--cyan);border-color:rgba(63,208,255,.4)}
+.tag.verkauft,.tag.fest{color:var(--pink);border-color:rgba(226,60,255,.5)}
+.tag.zurueck,.tag.uebrig{color:#FFD27A;border-color:rgba(255,210,122,.4)}
+.c-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);opacity:0;pointer-events:none;background:#221E52;border:1px solid var(--line2);padding:10px 16px;border-radius:10px;font-weight:600;transition:all .25s;z-index:50;max-width:90vw;text-align:center}
+.c-toast.on{opacity:1;transform:translateX(-50%)}
+.c-toast.bad{border-color:var(--bad);color:#FFC2D6}.c-toast.good{border-color:var(--good)}
+.c-filebtn{display:inline-flex;align-items:center;font:600 14px/1.2 var(--sans);letter-spacing:0;text-transform:none;color:var(--text);background:#221E52;border:1px solid var(--line2);border-radius:8px;padding:9px 13px;cursor:pointer}
+.c-filebtn input{display:none}
+.c-steps{counter-reset:s;list-style:none;display:flex;flex-direction:column;gap:14px}
+.c-steps li{counter-increment:s;position:relative;padding-left:42px;color:var(--body)}
+.c-steps li b{color:var(--text)}
+.c-steps li::before{content:counter(s);position:absolute;left:0;top:-3px;width:28px;height:28px;border-radius:7px;background:var(--grad);display:flex;align-items:center;justify-content:center;font:800 italic 18px/1 var(--cond);color:#fff}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:#0E0C26;border:1px solid var(--line2);border-radius:5px;padding:2px 5px;word-break:break-all;color:var(--text)}
+.c-revlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:12px}
+.c-revlist div{padding:8px 10px;border-radius:8px;background:#100E28;border:1px solid var(--line);font-size:13.5px}
+.c-revlist div.done{border-color:rgba(226,60,255,.55)}
+.c-revlist div.nx{border-color:var(--cyan)}
+.c-warn{padding:10px 12px;border-radius:8px;background:rgba(255,210,122,.08);border:1px solid rgba(255,210,122,.35);color:#FFE2A8;font-size:13.5px;margin-bottom:10px}
+.c-urlrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin:6px 0 2px}
+.c-urlrow input{font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.c-room{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:14px 0;padding:14px 16px;border-radius:10px;background:#100E28;border:1px solid var(--line2)}
+.c-room span{display:block;font:600 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.c-room b{font:800 italic 44px/1 var(--cond);letter-spacing:4px;background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:6px}
+.c-ostatus{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.c-orow{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:7px;background:#100E28;font-size:14px}
+.c-orow small{color:var(--muted);margin-left:6px}
+.c-orow b{font-weight:600;color:var(--muted);white-space:nowrap}
+.c-orow b.ok{color:var(--good)}
+.c-h4{font:700 italic 17px/1.2 var(--cond);text-transform:uppercase;letter-spacing:.4px;margin:16px 0 8px}
+.c-team.onl small::before{content:'● ';color:var(--good)}
+.c-team.ex small{color:var(--bad)}
+.c-exline{margin-top:8px;font-size:13px;color:var(--bad)}
+.c-logos{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:8px}
+.c-logo{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:8px;background:#100E28;border:1px solid var(--line);text-align:center}
+.c-logo .tl{width:52px;height:52px}
+.c-logo small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.c-logo.ok small{color:var(--good)}
+.tl{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:8px;background:#0E0C26;border:1px solid var(--line2);overflow:hidden;vertical-align:middle}
+.tl img{max-width:80%;max-height:80%;object-fit:contain}
+.tl b{font:800 italic 12px/1 var(--cond);letter-spacing:0;padding-right:1px;color:var(--text)}
+.t-pfteam .tl{width:34px}
+.c-logo .tl b{font-size:20px}
+.c-bgstat{display:flex;align-items:center;gap:12px;margin-top:10px}
+.c-bgthumb{width:128px;height:72px;border-radius:6px;border:1px solid var(--line2);background:#0E0C26 center/cover no-repeat;flex:none}
+.c-infomsg{white-space:pre-line}
+.t-prof{margin:2px 0 10px;padding:12px 14px;border-radius:10px;background:#100E28;border:1px solid var(--line)}
+.t-pfrows{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:14px;row-gap:6px}
+.t-pfrows dt{font:600 11px/1.9 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.t-pfrows dd{font-size:15px;color:var(--text);overflow-wrap:anywhere}
+.t-pfex{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.t-pfex.solo{margin-top:0;padding-top:0;border-top:0}
+.t-pfex>span{display:block;font:600 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--bad);margin-bottom:8px}
+.t-pfex>div{display:flex;flex-wrap:wrap;gap:8px}
+.t-pfteam{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:4px 10px 4px 4px;border-radius:8px;border:1px solid var(--line2)}
+.t-pfteam.me{border-color:var(--bad);color:var(--bad)}
+.c-src{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);margin-left:4px}
+.c-code{font:800 italic 22px/1 var(--cond);letter-spacing:2px;white-space:nowrap}
+.c-on{color:var(--good);font-weight:600}
+/* Teamchef-Seite */
+.t-login{max-width:560px;margin:7vh auto 0}
+.t-login h2{font:800 italic 46px/1.1 var(--cond);text-transform:uppercase;margin-bottom:6px}
+.t-login input{font:800 italic 42px/1 var(--cond);letter-spacing:5px;text-transform:uppercase;text-align:center;padding:14px}
+.t-teamname{font:800 italic 20px/1 var(--cond);text-transform:uppercase;padding:7px 12px 7px 10px;border-radius:8px;background:var(--grad);white-space:nowrap}
+.t-driver{display:flex;align-items:center;gap:14px;margin:4px 0 12px}
+.t-driver>div{min-width:0}
+.t-driver b{display:block;font:800 italic clamp(26px,8.5vw,46px)/1.05 var(--cond);text-transform:uppercase;padding-right:6px;overflow-wrap:anywhere}
+.t-driver small{color:var(--body);font-size:14px}
+.t-state{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
+.t-badge{display:inline-block;max-width:100%;font:700 13px/1.35 var(--sans);letter-spacing:2px;text-transform:uppercase;padding:8px 12px;border-radius:8px;border:1px solid var(--line2);color:var(--body)}
+.t-badge.lead{color:var(--good);border-color:rgba(75,227,168,.55);background:rgba(75,227,168,.1)}
+.t-badge.tie,.t-badge.won{color:var(--pink);border-color:rgba(226,60,255,.6);background:rgba(226,60,255,.12)}
+.t-badge.out{color:#FFD27A;border-color:rgba(255,210,122,.5);background:rgba(255,210,122,.07)}
+.t-hi span{display:block;font:600 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.t-hi b{font:800 italic 58px/1 var(--cond);padding-right:6px}
+.t-timer{font:800 italic 58px/1 var(--cond);margin-left:auto;text-align:right}
+.t-timer small{display:block;font:600 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.t-timer.urgent{color:var(--pink)}
+.t-row{display:flex;align-items:flex-end;gap:16px;margin:16px 0 6px}
+.t-amountrow{display:grid;grid-template-columns:1fr auto;gap:8px}
+.t-amountrow input{font:800 italic 34px/1 var(--cond);padding:10px 14px;min-width:0}
+.t-amountrow button{min-width:150px;font-size:16px}
+.t-fb{min-height:24px;margin-top:12px;font-weight:600}
+.t-kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.t-kv div{background:#100E28;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.t-kv span{display:block;font:600 11px/1 var(--sans);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.t-kv b{font:800 italic 28px/1 var(--cond);padding-right:4px;white-space:nowrap}
+.t-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"lot bid" "team my";gap:14px;align-items:start}
+.t-grid>.c-card{margin:0}
+#tLot{grid-area:lot}#tBidCard{grid-area:bid}#tTeamCard{grid-area:team}#tMyCard{grid-area:my}
+.t-grid>*{min-width:0}
+@media (max-width:880px){.t-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"lot" "bid" "my" "team"}}
+@media (max-width:520px){.c-head{padding:10px 12px 8px}.c-brand{font-size:20px}.c-main{padding-top:10px}.t-driver b{font-size:clamp(26px,8.5vw,36px)}.t-hi b,.t-timer{font-size:46px}.t-amountrow button{min-width:120px}.t-login{margin-top:3vh}.t-login h2{font-size:38px}}
+@media (max-width:420px){.t-hide-sm{display:none}.c-quick button{min-width:40px;padding:7px 4px}.c-sync{padding:7px 8px}.t-teamname{font-size:18px}}
+/* Startseite */
+.s-wrap{max-width:760px;margin:6vh auto 0;padding:0 max(16px,env(safe-area-inset-left)) 40px}
+.s-title{font:800 italic 58px/1.05 var(--cond);text-transform:uppercase;margin:6px 0 8px}
+.s-cards{display:grid;gap:12px;margin-top:24px}
+.s-card{display:block;text-decoration:none;color:var(--text);background:rgba(21,19,53,.92);border:1px solid var(--line);border-radius:14px;padding:18px 20px;transition:border-color .15s}
+.s-card:hover{border-color:var(--violet)}
+.s-card b{display:block;font:800 italic 30px/1.1 var(--cond);text-transform:uppercase;margin-bottom:4px}
+.s-card span{color:var(--body);font-size:15px}
+.s-card.main{border:2px solid transparent;background:linear-gradient(#151335,#151335) padding-box,var(--grad) border-box}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+const MODE = 'overlay';
+
+/* ---------- Grunddaten ---------- */
+const STORE_KEY = 'zrl-auktion-v1', PING_KEY = 'zrl-auktion-ping', UNDO_KEY = 'zrl-auktion-undo', TAB_KEY = 'zrl-auktion-tab';
+const ROOM_CTL_KEY = 'zrl-auktion-raum-steuerung', ROOM_OV_KEY = 'zrl-auktion-raum-overlay', ONLINE_KEY = 'zrl-auktion-online', BROKER_KEY = 'zrl-auktion-server';
+const TEAMCODES_KEY = 'zrl-auktion-teamcodes', TEAMCODE_KEY = 'zrl-auktion-teamchef-code';
+const DEFAULT_BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
+const TIERS = { S: { min: 15 }, A: { min: 10 }, B: { min: 5 }, C: { min: 2 } };
+const tierOf = s => s >= 8 ? 'S' : s >= 6 ? 'A' : s >= 5 ? 'B' : 'C';
+const DEFAULT_TEAMS = [['mercedes','Mercedes',85],['ferrari','Ferrari',85],['redbull','Red Bull',95],['mclaren','McLaren',95],['williams','Williams',95],['racingbulls','Racing Bulls',105],['alpine','Alpine',105],['audi','Audi',105],['haas','Haas',115],['cadillac','Cadillac',115],['astonmartin','Aston Martin',115]];
+const DEFAULT_DRIVERS = [['Tim Uhlmann',9.5],['Ricewolf',9.5],['Raphael',7],['Tyler Paulmann',7],['Hasefloxi',7],['URL Salzlos',6.5],['Marcel Gaming',6.5],['Griplow',6],['Philipp Übersteuern',5.5],['GhettoVieh',5.5],['Tannenzapfen',5],['Tarkinara',5],['David Salvatore',4.5],['Nictab',4.5],['Vesper Jupiter',4.5],['Priimex',4.5],['Jamie',4.5],['Mixo',4],['Justin',4],['K_P_8_4',4],['EliasW',4]];
+const PHASE_LABEL = { called: 'Aufruf', opening: 'Eröffnung', bidding: 'Überbieten', paused: 'Pausiert', sold: 'Verkauft', nobid: 'Kein Gebot' };
+const STATUS_LABEL = { offen: 'Offen', zurueck: 'Später', uebrig: 'Übrig', verkauft: 'Vergeben', fest: 'Fest' };
+const STAR = 'M12 2.4l2.95 6.1 6.7.8-4.95 4.6 1.3 6.6L12 17.2l-6 3.3 1.3-6.6L2.35 9.3l6.7-.8z';
+const LOCK = 'M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z';
+const lockSVG = `<svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="${LOCK}"/></svg>`;
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => (Math.round((+n || 0) * 10) / 10).toLocaleString('de-DE');
+const mmss = sec => { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
+const clock = t => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const rid = () => Math.random().toString(36).slice(2, 9);
+
+/* ---------- Bilddateien neben der HTML-Datei: logos/<team>.png, hintergrund.jpg ---------- */
+const ASSETS = {}, ASSET_FNS = new Set(); let ASSET_BUST = '', ASSET_VER = 0;
+function findAsset(base, exts) {
+  const c = ASSETS[base]; if (c) return c.url;
+  const e = ASSETS[base] = { url: null, size: '', file: '' }; let i = 0;
+  const next = () => {
+    if (ASSETS[base] !== e) return;
+    if (i >= exts.length) { e.url = ''; return assetChanged(); }
+    const file = base + '.' + exts[i++], img = new Image();
+    img.onload = () => { if (ASSETS[base] !== e) return; e.url = file + ASSET_BUST; e.file = file; e.size = img.naturalWidth + ' × ' + img.naturalHeight; assetChanged(); };
+    img.onerror = next; img.src = file + ASSET_BUST;
+  };
+  next(); return null;
+}
+function assetChanged() { ASSET_VER++; ASSET_FNS.forEach(f => { try { f(); } catch (er) {} }); }
+const onAsset = f => ASSET_FNS.add(f);
+function recheckAssets() { for (const k in ASSETS) delete ASSETS[k]; ASSET_BUST = '?r=' + Date.now(); assetChanged(); }
+const LOGO_EXT = ['png', 'webp', 'svg', 'jpg', 'jpeg'], BG_EXT = ['jpg', 'png', 'webp', 'jpeg'];
+const logoURL = id => findAsset('logos/' + id, LOGO_EXT);
+const bgURL = () => findAsset('hintergrund', BG_EXT);
+const teamShort = n => String(n || '').replace(/[^A-Za-z0-9ÄÖÜäöü]/g, '').slice(0, 3).toUpperCase();
+const logoHTML = (id, name) => { const u = logoURL(id); return u ? `<img src="${esc(u)}" alt="">` : `<b>${esc(teamShort(name))}</b>`; };
+
+function mkDriver(name, stars) { return { id: 'd' + rid(), name, stars, status: 'offen', team: null, price: null, attempts: 0, via: null, info: [], prev: [] }; }
+function defaultSettings() { return { league: 'ZRL', subtitle: 'Fahrer-Auktion', openingSec: 120, countdownSec: 25, step: 1, reserve: 2, sLimit: true, teamBids: true, showBidCount: true, showCalls: true, showPool: false, showStats: true, overlayVisible: true, showProfile: true, exTeamRule: true, bgMode: 'always', bgDim: 0 }; }
+function defaultState() {
+  return { v: 1, settings: defaultSettings(), teams: DEFAULT_TEAMS.map(([id, name, budget]) => ({ id, name, budget })),
+    drivers: DEFAULT_DRIVERS.map(([n, s]) => mkDriver(n, s)), lot: null, lotCounter: 0, history: [], scene: 'auction', reveal: { count: 0, at: 0 }, updatedAt: Date.now() };
+}
+function migrate(s) { s.settings = Object.assign(defaultSettings(), s.settings || {}); (s.drivers || []).forEach(d => { if (!Array.isArray(d.info)) d.info = []; if (!Array.isArray(d.prev)) d.prev = []; }); s.reveal = s.reveal || { count: 0, at: 0 }; s.history = s.history || []; return s; }
+function loadState() { try { const r = localStorage.getItem(STORE_KEY); if (r) { const s = JSON.parse(r); if (s && s.v === 1) return migrate(s); } } catch (e) {} return defaultState(); }
+let BC = null; try { BC = new BroadcastChannel('zrl-auktion'); } catch (e) {}
+function saveState(s) { s.updatedAt = Date.now(); const raw = JSON.stringify(s); try { localStorage.setItem(STORE_KEY, raw); } catch (e) {} try { BC && BC.postMessage(raw); } catch (e) {} return raw; }
+
+/* ---------- Abgeleitete Werte ---------- */
+const isAssigned = d => d.status === 'verkauft' || d.status === 'fest';
+const teamById = (s, id) => s.teams.find(t => t.id === id) || null;
+const teamName = (s, id) => (teamById(s, id) || {}).name || '';
+const teamIdx = (s, id) => s.teams.findIndex(t => t.id === id);
+const driverById = (s, id) => s.drivers.find(d => d.id === id) || null;
+const teamDrivers = (s, id) => s.drivers.filter(d => d.team === id && isAssigned(d));
+const teamSpent = (s, id) => teamDrivers(s, id).reduce((a, d) => a + (+d.price || 0), 0);
+const teamRest = (s, id) => (+(teamById(s, id) || {}).budget || 0) - teamSpent(s, id);
+const teamFree = (s, id) => Math.max(0, 2 - teamDrivers(s, id).length);
+const teamMax = (s, id) => { const f = teamFree(s, id); return f <= 0 ? 0 : teamRest(s, id) - (f - 1) * (+s.settings.reserve || 0); };
+const hasS = (s, id) => teamDrivers(s, id).some(d => tierOf(d.stars) === 'S');
+const exTeams = (s, d) => ((d && d.prev) || []).filter(id => teamById(s, id));
+const isExTeam = (s, d, tid) => !!(s.settings.exTeamRule && d && (d.prev || []).includes(tid));
+const infoRows = info => (info || []).filter(r => Array.isArray(r) && String(r[0] || '').trim() && String(r[1] ?? '').trim());
+const effPhase = l => l.phase === 'paused' ? l.pausedPhase : l.phase;
+const bestOpening = (l, team) => { let b = null; l.bids.forEach(x => { if (x.valid && x.phase === 'opening' && x.team === team && (b === null || x.amount > b)) b = x.amount; }); return b; };
+const openingTeams = l => new Set(l.bids.filter(x => x.valid && x.phase === 'opening').map(x => x.team)).size;
+const weakest = (s, ids) => ids.slice().sort((a, b) => teamIdx(s, b) - teamIdx(s, a))[0];
+const activeLot = s => s.lot && ['called', 'opening', 'bidding', 'paused'].includes(s.lot.phase);
+
+/* ---------- Regeln und Aktionen ---------- */
+function validateBid(s, team, amount) {
+  const l = s.lot; if (!l) return 'Kein Los aktiv.';
+  if (l.phase === 'paused') return 'Das Los ist pausiert. Erst „Weiter“ drücken.';
+  if (l.phase !== 'opening' && l.phase !== 'bidding') return l.phase === 'called' ? 'Erst die Eröffnung starten.' : 'Gerade läuft keine Bietphase.';
+  const now = Date.now();
+  if (l.phase === 'opening' && now >= l.openingEnd) return 'Zu spät: Die Eröffnung ist schon vorbei.';
+  if (l.phase === 'bidding' && now >= l.countdownEnd) return 'Zu spät: Der Countdown ist schon abgelaufen.';
+  const t = teamById(s, team); if (!t) return 'Bitte ein Team wählen.';
+  const d = driverById(s, l.driverId);
+  if (!isFinite(amount) || amount <= 0) return 'Bitte einen Betrag eingeben.';
+  if (teamFree(s, team) <= 0) return `${t.name} hat keine freien Cockpits mehr.`;
+  if (s.settings.sLimit && tierOf(d.stars) === 'S' && hasS(s, team)) return `${t.name} hat schon einen S-Fahrer.`;
+  if (isExTeam(s, d, team)) return `Ex-Team-Regel: ${d.name} darf nicht zu ${t.name} zurück.`;
+  if (amount < l.minBid) return `Unter dem Mindestgebot von ${fmt(l.minBid)} Mio.`;
+  const max = teamMax(s, team); if (amount > max + 1e-9) return `Zu hoch: ${t.name} kann höchstens ${fmt(max)} Mio bieten.`;
+  if (l.phase === 'opening') { const prev = bestOpening(l, team); if (prev !== null && amount <= prev) return `${t.name} hat schon ${fmt(prev)} Mio geboten. Gebote sind verbindlich.`; }
+  else {
+    if (!l.tie && l.leaders.length === 1 && l.leaders[0] === team) return `${t.name} führt bereits und kann sich nicht selbst überbieten.`;
+    const need = l.highest + (+s.settings.step || 1); if (amount < need - 1e-9) return `Muss mindestens ${fmt(need)} Mio sein (Höchstgebot ${fmt(l.highest)} Mio).`;
+  }
+  return null;
+}
+function recordBid(s, team, amount, reason, extra) {
+  const l = s.lot, t = Date.now(), x = extra || {};
+  l.bids.push({ t, team, amount, phase: effPhase(l), valid: !reason, reason: reason || '', src: x.src || 'leitung', id: x.id || null });
+  if (!reason && l.phase === 'bidding') { l.highest = amount; l.leaders = [team]; l.tie = false; l.countdownEnd = t + s.settings.countdownSec * 1000; l.bidSeq = (l.bidSeq || 0) + 1; }
+}
+function archive(s, result) {
+  const l = s.lot, d = driverById(s, l.driverId);
+  s.history.push({ no: l.no, driverId: l.driverId, driverName: d ? d.name : '', tier: d ? tierOf(d.stars) : '', minBid: l.minBid, half: l.half, bids: l.bids.slice(), result, team: l.winner || null, price: l.price ?? null, at: Date.now() });
+}
+function callDriver(s, id, drawn) {
+  if (activeLot(s)) return 'Es läuft noch ein Los.';
+  const d = driverById(s, id); if (!d || !(d.status === 'offen' || d.status === 'zurueck')) return 'Dieser Fahrer ist nicht verfügbar.';
+  const half = d.status === 'zurueck', base = TIERS[tierOf(d.stars)].min;
+  s.lotCounter = (s.lotCounter || 0) + 1;
+  s.lot = { no: s.lotCounter, driverId: id, phase: 'called', drawUntil: drawn ? Date.now() + 2800 : 0, half, minBid: half ? Math.ceil(base / 2) : base, bids: [], highest: null, leaders: [], tie: false, bidSeq: 0, calledAt: Date.now() };
+  d.attempts = (d.attempts || 0) + 1; s.scene = 'auction'; return null;
+}
+function drawDriver(s) {
+  if (activeLot(s)) return 'Es läuft noch ein Los.';
+  let pool = s.drivers.filter(d => d.status === 'offen'); if (!pool.length) pool = s.drivers.filter(d => d.status === 'zurueck');
+  if (!pool.length) return 'Keine Fahrer mehr im Topf.';
+  return callDriver(s, pool[Math.floor(Math.random() * pool.length)].id, true);
+}
+function cancelCall(s) {
+  const l = s.lot; if (!l || l.phase !== 'called') return 'Kein Aufruf zum Zurücknehmen.';
+  const d = driverById(s, l.driverId); if (d) d.attempts = Math.max(0, (d.attempts || 1) - 1);
+  s.lot = null; s.lotCounter = Math.max(0, s.lotCounter - 1); return null;
+}
+function startOpening(s) { const l = s.lot; if (!l || l.phase !== 'called') return 'Erst einen Fahrer aufrufen.'; l.drawUntil = 0; l.phase = 'opening'; l.openingEnd = Date.now() + s.settings.openingSec * 1000; return null; }
+function endOpening(s) {
+  const l = s.lot; if (!l || l.phase !== 'opening') return 'Die Eröffnung läuft nicht.';
+  const best = {}; l.bids.forEach(b => { if (b.valid && b.phase === 'opening') best[b.team] = Math.max(best[b.team] || 0, b.amount); });
+  const entries = Object.entries(best);
+  if (!entries.length) { const d = driverById(s, l.driverId); l.phase = 'nobid'; if (d) d.status = l.half ? 'uebrig' : 'zurueck'; archive(s, 'nobid'); return null; }
+  const hi = Math.max(...entries.map(e => e[1]));
+  l.highest = hi; l.leaders = entries.filter(e => e[1] === hi).map(e => e[0]); l.tie = l.leaders.length > 1;
+  l.phase = 'bidding'; l.countdownEnd = Date.now() + s.settings.countdownSec * 1000; l.bidSeq = (l.bidSeq || 0) + 1; return null;
+}
+function hammer(s) {
+  const l = s.lot; if (!l || l.phase !== 'bidding') return 'Gerade läuft kein Countdown.';
+  const winner = l.leaders.length > 1 ? weakest(s, l.leaders) : l.leaders[0];
+  const d = driverById(s, l.driverId);
+  d.status = 'verkauft'; d.team = winner; d.price = l.highest; d.via = 'auktion';
+  l.tieBroken = l.leaders.length > 1; l.winner = winner; l.price = l.highest; l.phase = 'sold'; l.soldAt = Date.now(); archive(s, 'sold'); return null;
+}
+function pauseLot(s) { const l = s.lot; if (!l || (l.phase !== 'opening' && l.phase !== 'bidding')) return 'Nichts zu pausieren.'; const end = l.phase === 'opening' ? l.openingEnd : l.countdownEnd; l.pausedPhase = l.phase; l.pausedRemaining = Math.max(1000, end - Date.now()); l.phase = 'paused'; return null; }
+function resumeLot(s) { const l = s.lot; if (!l || l.phase !== 'paused') return 'Das Los ist nicht pausiert.'; const end = Date.now() + l.pausedRemaining; l.phase = l.pausedPhase; if (l.phase === 'opening') l.openingEnd = end; else l.countdownEnd = end; return null; }
+function nextLot(s) { if (!s.lot) return null; if (activeLot(s)) return 'Das Los läuft noch.'; s.lot = null; return null; }
+function abortLot(s) {
+  const l = s.lot; if (!l || !['opening', 'bidding', 'paused'].includes(l.phase)) return 'Kein laufendes Los.';
+  const d = driverById(s, l.driverId); if (d) d.attempts = Math.max(0, (d.attempts || 1) - 1);
+  archive(s, 'abgebrochen'); s.lot = null; return null;
+}
+function assignFixed(s, did, tid, price) {
+  const d = driverById(s, did), t = teamById(s, tid);
+  if (!d || !t) return 'Bitte Fahrer und Team wählen.';
+  if (s.lot && activeLot(s) && s.lot.driverId === did) return 'Dieser Fahrer ist gerade im Los.';
+  if (isAssigned(d)) return 'Der Fahrer ist schon vergeben.';
+  if (teamFree(s, tid) <= 0) return `${t.name} hat keine freien Cockpits mehr.`;
+  if (!isFinite(price) || price < 0) return 'Bitte einen Preis eingeben (0 ist erlaubt).';
+  if (price > teamRest(s, tid) + 1e-9) return `${t.name} hat nur noch ${fmt(teamRest(s, tid))} Mio.`;
+  d.status = 'fest'; d.team = tid; d.price = price; d.via = 'fest'; return null;
+}
+function restrunde(s) {
+  if (activeLot(s)) return 'Erst das laufende Los beenden.';
+  const pool = s.drivers.filter(d => ['offen', 'zurueck', 'uebrig'].includes(d.status)).sort((a, b) => a.stars - b.stars);
+  if (!pool.length) return 'Keine übrigen Fahrer.';
+  const order = s.teams.slice().reverse(); let n = 0;
+  for (let round = 0; round < 2 && pool.length; round++) {
+    for (const t of order) {
+      if (!pool.length) break; if (teamFree(s, t.id) <= 0) continue;
+      const k = pool.findIndex(d => !isExTeam(s, d, t.id)); if (k < 0) continue;
+      const d = pool.splice(k, 1)[0]; const price = Math.max(0, Math.min(Math.ceil(TIERS[tierOf(d.stars)].min / 2), teamRest(s, t.id)));
+      d.status = 'verkauft'; d.via = 'restrunde'; d.team = t.id; d.price = price; n++;
+    }
+  }
+  s.lot = null; return n ? null : 'Kein Team mit freiem Cockpit darf diese Fahrer nehmen.';
+}
+function resetAuction(s) { s.drivers.forEach(d => Object.assign(d, { status: 'offen', team: null, price: null, attempts: 0, via: null })); s.lot = null; s.lotCounter = 0; s.history = []; s.scene = 'auction'; s.reveal = { count: 0, at: 0 }; }
+function parseDrivers(text) {
+  const out = [], errs = [];
+  text.split(/\r?\n/).forEach((line, i) => {
+    if (!line.trim()) return; const parts = line.split(/[;\t]/);
+    const name = (parts[0] || '').trim(), stars = parseFloat(String(parts[1] || '').replace(',', '.'));
+    if (!name || !isFinite(stars)) errs.push(i + 1); else out.push([name, stars]);
+  });
+  return { out, errs };
+}
+const normKey = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ß/g, 'ss').replace(/[^a-z0-9]/g, '');
+const TEAM_ALIAS = { merc: 'mercedes', amg: 'mercedes', mercedesamg: 'mercedes', scuderia: 'ferrari', scuderiaferrari: 'ferrari', rbr: 'redbull', redbullracing: 'redbull', oracleredbull: 'redbull', redbullracingteam: 'redbull', vcarb: 'racingbulls', visacashapprb: 'racingbulls', alphatauri: 'racingbulls', tororosso: 'racingbulls', sauber: 'audi', kicksauber: 'audi', stake: 'audi', stakef1: 'audi', alfaromeo: 'audi', aston: 'astonmartin', amr: 'astonmartin', renault: 'alpine', bwtalpine: 'alpine', mcl: 'mclaren', haasf1: 'haas', moneygram: 'haas', cadi: 'cadillac' };
+function findTeam(s, raw) {
+  const k = normKey(raw); if (!k) return null;
+  const t = s.teams.find(x => normKey(x.name) === k || x.id === k); if (t) return t.id;
+  if (TEAM_ALIAS[k] && teamById(s, TEAM_ALIAS[k])) return TEAM_ALIAS[k];
+  const c = s.teams.filter(x => normKey(x.name).startsWith(k) || x.id.startsWith(k));
+  return k.length >= 3 && c.length === 1 ? c[0].id : null;
+}
+const EX_LABEL = /^(ex[- ]?teams?|vorherige(\s+teams)?|fr(ü|ue)here\s+teams|letzte\s+teams|gesperrt(\s+f(ü|ue)r)?|gesperrte\s+(ex[- ]?)?teams|sperre|nicht\s+zu)$/i;
+/* Blöcke: 1. Zeile Fahrername, dann „Ex-Teams: A, B“ und beliebige „Bezeichnung: Wert“-Zeilen, Leerzeile trennt */
+function parseProfiles(s, text) {
+  const items = [], errs = []; let blk = null;
+  const flush = () => { if (blk && blk.d) items.push(blk); blk = null; };
+  String(text || '').split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim(), no = i + 1;
+    if (!line) return flush();
+    if (!blk) {
+      const name = line.replace(/^(fahrer|name)\s*:\s*/i, '').trim(), k = normKey(name);
+      const d = s.drivers.find(x => normKey(x.name) === k) || null;
+      blk = { d, info: [], prev: undefined };
+      if (!d) errs.push(`Zeile ${no}: Fahrer „${name}“ nicht gefunden`);
+      return;
+    }
+    const m = line.match(/^([^:]{1,40}):\s*(.*)$/);
+    if (!m) return errs.push(`Zeile ${no}: Format ist „Bezeichnung: Wert“ – oder fehlt davor eine Leerzeile?`);
+    const label = m[1].trim(), val = m[2].trim();
+    if (EX_LABEL.test(label)) {
+      const ids = [];
+      val.split(/\s*(?:[,;/&+]|\bund\b)\s*/i).map(x => x.trim()).filter(x => x && !/^[-–—]$/.test(x) && !/^(keine?|none|kein team)$/i.test(x)).forEach(x => {
+        const id = findTeam(s, x); if (!id) errs.push(`Zeile ${no}: Team „${x}“ unbekannt`); else if (!ids.includes(id)) ids.push(id);
+      });
+      blk.prev = ids;
+    } else if (blk.info.length < 12) blk.info.push([label.slice(0, 30), val.slice(0, 140)]);
+  });
+  flush();
+  return { items, errs };
+}
+function profilesText(s) {
+  return s.drivers.map(d => [d.name, 'Ex-Teams: ' + exTeams(s, d).map(id => teamName(s, id)).join(', '), ...(d.info || []).map(r => `${r[0]}: ${r[1] ?? ''}`)].join('\n')).join('\n\n');
+}
+function protocolCSV(s) {
+  const rows = [['Los', 'Fahrer', 'Tier', 'Mindestgebot (Mio)', 'Zeit', 'Team', 'Gebot (Mio)', 'Phase', 'Quelle', 'Gültig', 'Grund', 'Ergebnis']];
+  const PH = { opening: 'Eröffnung', bidding: 'Überbieten', spaet: 'Nach der Entscheidung' };
+  s.history.forEach(h => {
+    const res = h.result === 'sold' ? `Zuschlag ${teamName(s, h.team)} für ${fmt(h.price)} Mio` : h.result === 'nobid' ? 'Kein Gebot' : 'Abgebrochen';
+    if (!h.bids.length) rows.push([h.no, h.driverName, h.tier, fmt(h.minBid), '', '', '', '', '', '', '', res]);
+    h.bids.forEach(b => rows.push([h.no, h.driverName, h.tier, fmt(h.minBid), clock(b.t), teamName(s, b.team), fmt(b.amount), PH[b.phase] || b.phase, b.src === 'online' ? 'Teamchef online' : 'Leitung', b.valid ? 'ja' : 'nein', b.reason, res]));
+  });
+  s.drivers.filter(d => d.via === 'fest' || d.via === 'restrunde').forEach(d => rows.push(['–', d.name, tierOf(d.stars), '', '', teamName(s, d.team), fmt(d.price), d.via === 'fest' ? 'Fest vergeben' : 'Restrunde', 'Leitung', '', '', '']));
+  return rows.map(r => r.map(c => { c = String(c ?? ''); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';')).join('\n');
+}
+
+/* ---------- Online: Übertragung, Verschlüsselung, öffentliche Ansicht ---------- */
+function brokerList() { try { const o = JSON.parse(localStorage.getItem(BROKER_KEY) || 'null'); if (Array.isArray(o) && o.length) return o; } catch (e) {} return DEFAULT_BROKERS; }
+class MiniMQTT {
+  constructor(url, o) { this.url = url; this.o = o || {}; this.topics = new Set(); this.state = 'idle'; this.tries = 0; this.pid = 0; this.buf = new Uint8Array(0); this.closed = false; this.lastRx = 0; this.lastTx = 0; this.connect(); }
+  _set(st) { if (this.state !== st) { this.state = st; if (this.o.onStatus) this.o.onStatus(this); } }
+  connect() {
+    if (this.closed) return; this.tries++; this._set('connecting'); let ws;
+    try { ws = new WebSocket(this.url, ['mqtt']); } catch (e) { this._set('down'); this._retry(); return; }
+    this.ws = ws; ws.binaryType = 'arraybuffer'; this.buf = new Uint8Array(0); this.openedAt = Date.now();
+    ws.onopen = () => this._send(this._connect());
+    ws.onmessage = e => { this.lastRx = Date.now(); this._feed(new Uint8Array(e.data)); };
+    ws.onerror = () => { try { ws.close(); } catch (er) {} };
+    ws.onclose = () => { if (this.ws !== ws) return; this.ws = null; this._set('down'); this._retry(); };
+  }
+  _retry() { if (this.closed) return; clearTimeout(this.rt); this.rt = setTimeout(() => this.connect(), [1000, 2000, 4000, 8000, 15000][Math.min(Math.max(this.tries - 1, 0), 4)]); }
+  tick() {
+    const t = Date.now();
+    if (this.state === 'connecting' && this.ws && t - this.openedAt > 12000) { try { this.ws.close(); } catch (e) {} }
+    if (this.state === 'up') { if (t - this.lastTx > 20000) this._send(new Uint8Array([0xC0, 0])); if (t - this.lastRx > 65000) { try { this.ws.close(); } catch (e) {} } }
+  }
+  wake() {
+    if (this.closed) return;
+    if (this.state === 'up') { if (Date.now() - this.lastRx > 25000) { try { this.ws.close(); } catch (e) {} } else this._send(new Uint8Array([0xC0, 0])); }
+    else if (this.state !== 'connecting' || !this.ws) { clearTimeout(this.rt); this.connect(); }
+  }
+  close() { this.closed = true; clearTimeout(this.rt); const ws = this.ws; this.ws = null; try { if (ws) ws.close(); } catch (e) {} this._set('closed'); }
+  subscribe(t) { this.topics.add(t); if (this.state === 'up') this._send(this._sub(t)); }
+  publish(t, payload, retain) { return this.state === 'up' && this._send(MiniMQTT.pack(retain ? 0x31 : 0x30, [MiniMQTT.str(t), payload])); }
+  _send(b) { try { if (this.ws && this.ws.readyState === 1) { this.ws.send(b); this.lastTx = Date.now(); return true; } } catch (e) {} return false; }
+  _feed(chunk) {
+    const b = new Uint8Array(this.buf.length + chunk.length); b.set(this.buf); b.set(chunk, this.buf.length); this.buf = b;
+    for (;;) {
+      if (this.buf.length < 2) return; let mul = 1, len = 0, i = 1, byte;
+      do { if (i >= this.buf.length) return; byte = this.buf[i++]; len += (byte & 127) * mul; mul *= 128; if (i > 5) { try { this.ws.close(); } catch (e) {} return; } } while (byte & 128);
+      if (this.buf.length < i + len) return;
+      const h = this.buf[0], body = this.buf.slice(i, i + len); this.buf = this.buf.slice(i + len); this._handle(h, body);
+    }
+  }
+  _handle(h, body) {
+    const type = h >> 4;
+    if (type === 2) { if (body[1] === 0) { this.tries = 0; this._set('up'); this.topics.forEach(t => this._send(this._sub(t))); if (this.o.onUp) this.o.onUp(this); } else { try { this.ws.close(); } catch (e) {} } }
+    else if (type === 3) { const qos = (h >> 1) & 3, tl = (body[0] << 8) | body[1]; let p = 2 + tl; if (qos) p += 2; const topic = new TextDecoder().decode(body.subarray(2, 2 + tl)); if (this.o.onMessage) this.o.onMessage(topic, body.slice(p), this); }
+  }
+  _connect() { return MiniMQTT.pack(0x10, [MiniMQTT.str('MQTT'), new Uint8Array([4, 2, 0, 60]), MiniMQTT.str('zrl' + Math.random().toString(36).slice(2, 12))]); }
+  _sub(t) { this.pid = this.pid % 60000 + 1; return MiniMQTT.pack(0x82, [new Uint8Array([this.pid >> 8, this.pid & 255]), MiniMQTT.str(t), new Uint8Array([0])]); }
+  static str(s) { const b = new TextEncoder().encode(s), o = new Uint8Array(b.length + 2); o[0] = b.length >> 8; o[1] = b.length & 255; o.set(b, 2); return o; }
+  static pack(h, parts) { const n = parts.reduce((a, p) => a + p.length, 0), lb = []; let x = n; do { let d = x % 128; x = Math.floor(x / 128); if (x) d |= 128; lb.push(d); } while (x); const o = new Uint8Array(1 + lb.length + n); o[0] = h; o.set(lb, 1); let k = 1 + lb.length; parts.forEach(q => { o.set(q, k); k += q.length; }); return o; }
+}
+function onWake(fn) { document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') fn(); }); addEventListener('pageshow', fn); addEventListener('online', fn); addEventListener('focus', fn); }
+const WEBURL_KEY = 'zrl-auktion-weburl';
+const normBase = u => { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; u = u.split('#')[0].split('?')[0]; if (/\.html?$/i.test(u)) u = u.replace(/[^/]*$/, ''); if (!u.endsWith('/')) u += '/'; return u; };
+const ROOM_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newRoomCode = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), x => ROOM_ALPHA[x % 32]).join('');
+const normCode = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const showCode = c => { c = normCode(c); return c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4) : c; };
+async function roomCrypto(code) {
+  code = normCode(code); const enc = new TextEncoder(), subtle = window.crypto && crypto.subtle;
+  if (!subtle) throw new Error('nocrypto');
+  const h = new Uint8Array(await subtle.digest('SHA-256', enc.encode('zrl-auktion|raum|' + code)));
+  const id = Array.from(h.slice(0, 16), b => b.toString(16).padStart(2, '0')).join('');
+  const base = await subtle.importKey('raw', enc.encode(code), 'PBKDF2', false, ['deriveKey']);
+  const key = await subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('zrl-auktion-v1'), iterations: 120000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  return { code, topic: 'zrl-auktion/v1/' + id, ping: 'zrl-auktion/v1/' + id + '/ping', key };
+}
+async function teamCrypto(code) {
+  code = normCode(code); const enc = new TextEncoder(), subtle = window.crypto && crypto.subtle;
+  if (!subtle) throw new Error('nocrypto');
+  const h = new Uint8Array(await subtle.digest('SHA-256', enc.encode('zrl-auktion|team|' + code)));
+  const id = Array.from(h.slice(0, 16), b => b.toString(16).padStart(2, '0')).join('');
+  const base = await subtle.importKey('raw', enc.encode(code), 'PBKDF2', false, ['deriveKey']);
+  const key = await subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('zrl-auktion-team-v1'), iterations: 120000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  return { code, view: 'zrl-auktion/v1/t/' + id + '/view', bid: 'zrl-auktion/v1/t/' + id + '/bid', key };
+}
+/* Was ein Teamchef sieht: das Los wie im Stream, dazu nur sein eigenes Team */
+function teamView(s, id, fb) {
+  const t = teamById(s, id), now = Date.now(), l = s.lot, step = +s.settings.step || 1, max = teamMax(s, id);
+  const assigned = s.drivers.filter(isAssigned).length;
+  const v = { v: 1, league: s.settings.league, scene: s.scene, accept: !!s.settings.teamBids, step, fb: fb || null,
+    team: { id, name: t.name, budget: t.budget, spent: teamSpent(s, id), rest: teamRest(s, id), free: teamFree(s, id), max, drivers: teamDrivers(s, id).map(d => ({ name: d.name, stars: d.stars, price: d.price, via: d.via })) },
+    stats: { sold: assigned, total: s.drivers.length }, lot: null };
+  if (l) {
+    const d = driverById(s, l.driverId), ph = l.phase, bp = ph === 'bidding' || ph === 'sold' || (ph === 'paused' && l.pausedPhase === 'bidding');
+    const drawing = l.drawUntil && l.drawUntil > now, mine = bestOpening(l, id);
+    let cant = '';
+    if (!s.settings.teamBids) cant = 'Online-Gebote sind gerade gesperrt. Bitte per DM an die Leitung.';
+    else if (ph === 'called') cant = 'Die Eröffnung startet gleich.';
+    else if (ph === 'paused') cant = 'Das Los ist gerade pausiert.';
+    else if (ph !== 'opening' && ph !== 'bidding') cant = 'Gerade läuft keine Bietphase.';
+    else if (teamFree(s, id) <= 0) cant = 'Deine Cockpits sind voll.';
+    else if (s.settings.sLimit && tierOf(d.stars) === 'S' && hasS(s, id)) cant = 'Du hast schon einen S-Fahrer.';
+    else if (isExTeam(s, d, id)) cant = 'Ex-Team-Regel: Dieser Fahrer darf nicht zu deinem Team zurück.';
+    else if (max < l.minBid) cant = `Dein Maxgebot (${fmt(max)} Mio) liegt unter dem Mindestgebot.`;
+    else if (ph === 'bidding' && !l.tie && l.leaders.length === 1 && l.leaders[0] === id) cant = 'Du führst – du kannst dich nicht selbst überbieten.';
+    v.lot = { no: l.no, phase: ph, minBid: l.minBid, half: !!l.half, bidSeq: l.bidSeq || 0,
+      driver: drawing ? null : { name: d.name, stars: d.stars, tier: tierOf(d.stars), info: infoRows(d.info), prev: exTeams(s, d).map(x => ({ id: x, name: teamName(s, x) })), rule: !!s.settings.exTeamRule },
+      highest: bp ? l.highest : null, tie: bp && ph !== 'sold' ? !!l.tie : false,
+      leading: bp && ph !== 'sold' && !l.tie && l.leaders.length === 1 && l.leaders[0] === id, tiedIn: bp && ph !== 'sold' && !!l.tie && l.leaders.includes(id),
+      won: ph === 'sold' && l.winner === id, price: ph === 'sold' ? l.price : null, openingCount: openingTeams(l), myOpening: mine,
+      drawRemaining: drawing ? l.drawUntil - now : 0, openingRemaining: ph === 'opening' ? Math.max(0, l.openingEnd - now) : 0,
+      countdownRemaining: ph === 'bidding' ? Math.max(0, l.countdownEnd - now) : 0, pausedPhase: ph === 'paused' ? l.pausedPhase : null, pausedRemaining: ph === 'paused' ? l.pausedRemaining : 0,
+      canBid: !cant, cantReason: cant, minNext: ph === 'bidding' ? l.highest + step : (mine !== null ? mine + step : l.minBid),
+      myBids: l.bids.filter(b => b.team === id).map(b => ({ id: b.id || null, amount: b.amount, valid: b.valid, reason: b.reason, phase: b.phase, age: now - b.t })) };
+  }
+  return v;
+}
+function hydrateTeam(v, prev) {
+  const now = Date.now(), l = v.lot;
+  if (l) {
+    const key = [l.no, l.phase, l.bidSeq, l.pausedPhase].join('|');
+    const p = prev && prev.lot && prev._key === key ? prev.lot : null;
+    const mk = (rem, old) => { const e = now + (rem || 0); return old ? Math.min(old, e) : e; };
+    l.openingEnd = mk(l.openingRemaining, p && p.openingEnd); l.countdownEnd = mk(l.countdownRemaining, p && p.countdownEnd);
+    l.drawUntil = l.drawRemaining > 0 ? mk(l.drawRemaining, p && p.drawUntil) : 0;
+    l.myBids.forEach(b => { b.at = now - b.age; });
+    v._key = key;
+  }
+  return v;
+}
+async function seal(room, obj) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, room.key, new TextEncoder().encode(JSON.stringify(obj)))); const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out; }
+async function unseal(room, bytes) { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, room.key, bytes.slice(12)); return JSON.parse(new TextDecoder().decode(pt)); }
+/* Nur was im Bild zu sehen ist: keine Bieter, keine Zuschläge vor der Enthüllung, Zeiten als Restdauer */
+function publicView(s) {
+  const now = Date.now(), order = s.teams.slice().reverse(), cnt = Math.min(s.reveal.count || 0, order.length), st = s.settings;
+  const shown = new Set(order.slice(0, cnt).map(t => t.id));
+  const v = { v: 1, settings: { league: st.league, subtitle: st.subtitle, showStats: st.showStats, showPool: st.showPool, showBidCount: st.showBidCount, showCalls: st.showCalls, overlayVisible: st.overlayVisible, openingSec: st.openingSec, countdownSec: st.countdownSec, showProfile: st.showProfile, exTeamRule: st.exTeamRule, bgMode: st.bgMode, bgDim: st.bgDim },
+    teams: s.teams.map(t => ({ id: t.id, name: t.name, budget: t.budget })),
+    drivers: s.drivers.map(d => { const a = isAssigned(d); return { id: d.id, name: d.name, stars: d.stars, status: d.status, price: a ? d.price : null, team: a && shown.has(d.team) ? d.team : null, via: null }; }),
+    lot: null, lotCounter: s.lotCounter, scene: s.scene, reveal: { count: cnt, at: s.reveal.at || 0 }, history: [] };
+  const l = s.lot;
+  if (l) {
+    const ph = l.phase, bp = ph === 'bidding' || ph === 'sold' || (ph === 'paused' && l.pausedPhase === 'bidding');
+    v.lot = { no: l.no, driverId: l.driverId, phase: ph, minBid: l.minBid, half: !!l.half, bidSeq: l.bidSeq || 0, tie: ph !== 'sold' && bp ? !!l.tie : false, leaders: [], bids: [], openingCount: openingTeams(l),
+      highest: bp ? l.highest : null, price: ph === 'sold' ? l.price : null,
+      drawRemaining: l.drawUntil ? Math.max(0, l.drawUntil - now) : 0, openingRemaining: ph === 'opening' ? Math.max(0, l.openingEnd - now) : 0,
+      countdownRemaining: ph === 'bidding' ? Math.max(0, l.countdownEnd - now) : 0, pausedPhase: ph === 'paused' ? l.pausedPhase : null, pausedRemaining: ph === 'paused' ? l.pausedRemaining : 0 };
+    const d = driverById(s, l.driverId); v.lot.profile = { info: d ? infoRows(d.info) : [], prev: d ? exTeams(s, d) : [] };
+  }
+  return v;
+}
+/* Restdauern in Zeitpunkte der eigenen Uhr umrechnen – so stören abweichende PC-Uhren nicht */
+function hydrate(v, prev) {
+  const s = migrate(v), now = Date.now(); s.history = [];
+  const l = s.lot;
+  if (l) {
+    const key = [l.no, l.phase, l.bidSeq, l.pausedPhase].join('|');
+    const p = prev && prev.lot && prev._key === key ? prev.lot : null;
+    const mk = (rem, old) => { const e = now + (rem || 0); return old ? Math.min(old, e) : e; };
+    l.openingEnd = mk(l.openingRemaining, p && p.openingEnd);
+    l.countdownEnd = mk(l.countdownRemaining, p && p.countdownEnd);
+    l.drawUntil = l.drawRemaining > 0 ? mk(l.drawRemaining, p && p.drawUntil) : (p && p.drawUntil > now ? p.drawUntil : 0);
+    s._key = key;
+  }
+  return s;
+}
+function makeTicker(ms) {
+  const fns = [], run = () => fns.forEach(f => { try { f(); } catch (e) { console.error(e); } });
+  let ok = false;
+  try { const w = new Worker(URL.createObjectURL(new Blob([`setInterval(function(){postMessage(0)},${ms})`], { type: 'text/javascript' }))); w.onmessage = run; ok = true; } catch (e) {}
+  if (!ok) setInterval(run, ms);
+  return f => fns.push(f);
+}
+
+/* ---------- Overlay ---------- */
+function mixColor(f) { const a = [63, 208, 255], b = [226, 60, 255]; return 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(',') + ')'; }
+function starsHTML(stars) {
+  let h = ''; const svg = c => `<svg viewBox="0 0 24 24"><path d="${STAR}" fill="${c}"/></svg>`;
+  for (let i = 0; i < 10; i++) { const c = mixColor(i / 9), full = stars >= i + 1, half = !full && stars >= i + 0.5; h += `<span class="st-wrap">${svg(full ? c : '#2C2866')}${half ? `<span class="st-half">${svg(c)}</span>` : ''}</span>`; }
+  return h;
+}
+function poolHTML(s, hideCur) {
+  const cur = s.lot && !hideCur && s.lot.phase !== 'sold' && s.lot.phase !== 'nobid' ? s.lot.driverId : null;
+  const g = { S: [], A: [], B: [], C: [] }; s.drivers.forEach(d => g[tierOf(d.stars)].push(d));
+  return '<h4>Fahrerpool</h4>' + ['S', 'A', 'B', 'C'].filter(k => g[k].length).map(k => {
+    const chips = g[k].slice().sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name)).map(d => {
+      let cls = '', extra = '';
+      if (d.id === cur) cls = 'cur';
+      else if (isAssigned(d)) { cls = 'sold'; extra = d.status === 'fest' ? 'fest' : fmt(d.price); }
+      else if (d.status === 'zurueck' || d.status === 'uebrig') { cls = 'later'; extra = 'später'; }
+      return `<span class="ov-chip ${cls}">${esc(d.name)}${extra ? `<em>${extra}</em>` : ''}</span>`;
+    }).join('');
+    return `<div class="ov-tierhead"><b>${k}-Tier</b><span>ab ${TIERS[k].min} Mio</span></div><div class="ov-chips">${chips}</div>`;
+  }).join('');
+}
+function profileData(s, d) {
+  const l = s.lot, p = l && l.profile && l.driverId === d.id ? l.profile : { info: infoRows(d.info), prev: exTeams(s, d) };
+  return { info: infoRows(p.info), prev: (p.prev || []).filter(id => teamById(s, id)), rule: !!s.settings.exTeamRule };
+}
+function profileHTML(s, d) {
+  const p = profileData(s, d), rows = p.info.slice(0, 6);
+  if (!rows.length && !p.prev.length) return '';
+  const ex = p.prev.length ? `<div class="pf-ex${rows.length ? '' : ' solo'}${p.rule ? ' rule' : ''}"><div class="pf-exh">${p.rule ? lockSVG + 'Gesperrte Ex-Teams' : 'Vorherige Teams'}</div><div class="pf-logos">${p.prev.map(id => { const t = teamById(s, id); return `<div class="pf-team"><div class="pf-logo">${logoHTML(id, t.name)}${p.rule ? `<i>${lockSVG}</i>` : ''}</div><span>${esc(t.name)}</span></div>`; }).join('')}</div></div>` : '';
+  return `<h4><span class="pf-t">Fahrerprofil</span><span class="pf-n">${esc(d.name)}</span></h4>${rows.length ? `<div class="pf-rows">${rows.map(r => `<span class="pf-k">${esc(r[0])}</span><span class="pf-v">${esc(r[1])}</span>`).join('')}</div>` : ''}${ex}`;
+}
+function revealHTML(s) {
+  const order = s.teams.slice().reverse(), n = order.length, cnt = Math.min(s.reveal.count, n);
+  const cards = order.map((tm, i) => {
+    const shown = i < cnt, isNew = shown && i === cnt - 1;
+    const ds = teamDrivers(s, tm.id).sort((a, b) => (b.price || 0) - (a.price || 0));
+    let slots = '';
+    for (let k = 0; k < 2; k++) {
+      const d = ds[k];
+      if (!shown) slots += `<div class="rv-slot"><span class="n">• • •</span><span class="p">? Mio</span></div>`;
+      else if (d) slots += `<div class="rv-slot"><span class="n"><i class="rv-t">${tierOf(d.stars)}</i>${esc(d.name)}</span><span class="p">${d.status === 'fest' ? 'Fest · ' : ''}${fmt(d.price)} Mio</span></div>`;
+      else slots += `<div class="rv-slot empty"><span class="n">Cockpit frei</span><span class="p">–</span></div>`;
+    }
+    const rest = shown ? `Restbudget ${fmt(teamRest(s, tm.id))} Mio` : `${lockSVG}Noch verdeckt`;
+    const lu = logoURL(tm.id);
+    return `<div class="rv-card ${shown ? 'shown' : 'hidden'} ${isNew ? 'new' : ''}"><div class="rv-team">${lu ? `<img class="rv-logo" src="${esc(lu)}" alt="">` : ''}<b>${esc(tm.name)}</b><span>#${i + 1}</span></div>${slots}<div class="rv-rest">${rest}</div></div>`;
+  }).join('');
+  let sum;
+  if (cnt < n) sum = `<div class="rv-card rv-sum"><span class="k">Noch verdeckt</span><b>${n - cnt}</b><span class="k">${n - cnt === 1 ? 'Team' : 'Teams'}</span></div>`;
+  else {
+    const sold = s.drivers.filter(isAssigned), top = sold.slice().sort((a, b) => (b.price || 0) - (a.price || 0))[0];
+    const total = sold.reduce((a, d) => a + (+d.price || 0), 0);
+    sum = `<div class="rv-card rv-sum"><span class="k">Rekordtransfer</span><b class="sm">${top ? esc(top.name) : '–'}</b><span class="v">${top ? fmt(top.price) + ' Mio' : ''}</span><span class="k">Gesamt ausgegeben</span><span class="v">${fmt(total)} Mio</span></div>`;
+  }
+  return `<div class="rv-top"></div><div class="rv-head"><div><div class="rv-eyebrow">${esc(s.settings.league)} · ${esc(s.settings.subtitle)}</div><div class="rv-title">Die Enthüllung</div></div><div class="rv-count">${cnt ? `Team ${cnt} von ${n}` : 'Gleich geht’s los'}</div></div><div class="rv-grid">${cards}${sum}</div>`;
+}
+
+let OV_UID = 0;
+function createOverlay(host, opts = {}) {
+  const uid = ++OV_UID, C = 2 * Math.PI * 74;
+  host.classList.add('ov-root'); if (opts.preview) host.classList.add('preview');
+  host.innerHTML = `<div class="ov-bg"></div><div class="ov-stage"><div class="ov-auction">
+    <div class="ov-brand ov-glow"><div class="ov-box ov-cut"><span class="ov-logo"></span><span class="ov-sep"></span><span class="ov-sub"></span><span class="ov-lotno"></span></div></div>
+    <div class="ov-statswrap ov-glow"><div class="ov-box ov-cut ov-stats">
+      <div class="ov-stat"><span class="k">Vergeben</span><span class="v" data-v="sold"></span></div>
+      <div class="ov-stat"><span class="k">Freie Cockpits</span><span class="v" data-v="free"></span></div>
+      <div class="ov-stat"><span class="k">Ausgegeben</span><span class="v" data-v="spent"></span></div></div></div>
+    <div class="ov-poolwrap ov-glow ov-off"><div class="ov-box ov-cut ov-pool"></div></div>
+    <div class="ov-profwrap ov-glow ov-off"><div class="ov-box ov-cut ov-prof"></div></div>
+    <div class="ov-call"></div>
+    <div class="ov-lowerwrap ov-glow ov-off"><div class="ov-lower ov-cut"><div class="ov-topline"></div>
+      <div class="ov-tier"><span class="ov-tier-l"></span><span class="ov-tier-k">Tier</span></div>
+      <div class="ov-driver"><div class="ov-eyebrow"></div><div class="ov-name"></div><div class="ov-starsrow"><span class="ov-stars"></span><span class="ov-meta"></span></div></div>
+      <div class="ov-bid"><div class="ov-bidtext"><div class="ov-pill"></div><div class="ov-amount"></div><div class="ov-bidsub"></div></div>
+        <div class="ov-ring"><svg viewBox="0 0 170 170"><defs><linearGradient id="ovg${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3FD0FF"/><stop offset=".5" stop-color="#7A3CFF"/><stop offset="1" stop-color="#E23CFF"/></linearGradient></defs><circle class="trk" cx="85" cy="85" r="74"/><circle class="prg" cx="85" cy="85" r="74" stroke="url(#ovg${uid})"/></svg><div class="ov-ringtxt"><b></b><span></span></div></div>
+      </div></div><div class="ov-stamp">Verkauft</div></div>
+  </div><div class="ov-reveal"></div><div class="ov-setup"></div></div>`;
+  const q = k => host.querySelector(k);
+  const E = { stage: q('.ov-stage'), auction: q('.ov-auction'), logo: q('.ov-logo'), sub: q('.ov-sub'), lotno: q('.ov-lotno'), statswrap: q('.ov-statswrap'), sold: q('[data-v=sold]'), free: q('[data-v=free]'), spent: q('[data-v=spent]'), poolwrap: q('.ov-poolwrap'), pool: q('.ov-pool'), call: q('.ov-call'), lowerwrap: q('.ov-lowerwrap'), tierL: q('.ov-tier-l'), eyebrow: q('.ov-eyebrow'), name: q('.ov-name'), stars: q('.ov-stars'), meta: q('.ov-meta'), pill: q('.ov-pill'), amount: q('.ov-amount'), bidsub: q('.ov-bidsub'), ring: q('.ov-ring'), prg: q('.ov-ring .prg'), ringB: q('.ov-ringtxt b'), ringS: q('.ov-ringtxt span'), reveal: q('.ov-reveal'), bg: q('.ov-bg'), profwrap: q('.ov-profwrap'), prof: q('.ov-prof') };
+  E.prg.style.strokeDasharray = C;
+  let S = null, lastFit = null;
+  const mem = { lotNo: null, seq: null, name: null, needFit: false, shuffling: false, shuffleAt: 0, call: '', revealKey: '', starsKey: '', profFor: null };
+  const setText = (el, v) => { if (el.textContent !== v) el.textContent = v; };
+  const setHTML = (el, v) => { if (el._h !== v) { el._h = v; el.innerHTML = v; } };
+  const restart = (el, c) => { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); };
+  function fit() {
+    if (opts.preview) { const w = host.clientWidth; if (w === lastFit) return; lastFit = w; const sc = w / 1920; E.stage.style.transform = `scale(${sc})`; host.style.height = (1080 * sc) + 'px'; if (w > 0) mem.needFit = true; }
+    else { const k = innerWidth + 'x' + innerHeight; if (k === lastFit) return; lastFit = k; E.stage.style.transform = `scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`; }
+  }
+  function fitName() { const el = E.name; if (!el.clientWidth) { mem.needFit = true; return; } let size = 104; el.style.fontSize = size + 'px'; let g = 0; while (el.scrollWidth > el.clientWidth + 1 && size > 44 && g++ < 40) { size -= 4; el.style.fontSize = size + 'px'; } }
+  function setName(n) { if (mem.name !== n) { mem.name = n; E.name.textContent = n; fitName(); } }
+  function setCall(t) { if (t !== mem.call) { mem.call = t; E.call.textContent = t; E.call.classList.remove('on'); if (t) { void E.call.offsetWidth; E.call.classList.add('on'); } } }
+  function render() {
+    if (!S) return; const st = S.settings, l = S.lot, t = Date.now();
+    E.stage.classList.toggle('hidden', !st.overlayVisible);
+    const rv = S.scene === 'reveal';
+    E.auction.classList.toggle('ov-off', rv); E.reveal.classList.toggle('on', rv);
+    setText(E.logo, st.league || ''); setText(E.sub, st.subtitle || ''); setText(E.lotno, l ? 'Los ' + l.no : '');
+    const assigned = S.drivers.filter(isAssigned);
+    setHTML(E.sold, `${assigned.length}<small>/ ${S.drivers.length}</small>`);
+    setText(E.free, String(Math.max(0, S.teams.length * 2 - assigned.length)));
+    setHTML(E.spent, `${fmt(assigned.reduce((a, d) => a + (+d.price || 0), 0))}<small>Mio</small>`);
+    E.statswrap.classList.toggle('ov-off', !st.showStats);
+    E.poolwrap.classList.toggle('ov-off', !st.showPool);
+    if (st.showPool) setHTML(E.pool, poolHTML(S, l && l.drawUntil > t));
+    E.lowerwrap.classList.toggle('ov-off', !l);
+    if (l) { const d = driverById(S, l.driverId); if (d) { const k = d.id + '|' + d.stars + '|' + l.minBid; if (k !== mem.starsKey) { mem.starsKey = k; E.stars.innerHTML = starsHTML(d.stars); setText(E.meta, `${fmt(d.stars)} Sterne · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (halbiert)' : ''}`); } } }
+    const pd = l && driverById(S, l.driverId), ph = st.showProfile && pd && !rv && !(l.drawUntil > t) ? profileHTML(S, pd) : '';
+    if (ph) { setHTML(E.prof, ph); if (mem.profFor !== pd.id) { mem.profFor = pd.id; restart(E.profwrap, 'in'); } } else mem.profFor = null;
+    E.profwrap.classList.toggle('ov-off', !ph);
+    const bu = bgURL(), bgOn = !!bu && (st.bgMode === 'always' || (st.bgMode === 'reveal' && rv));
+    if (bu && E.bg._u !== bu) { E.bg._u = bu; E.bg.style.backgroundImage = `url("${bu}")`; }
+    E.bg.classList.toggle('on', bgOn); E.bg.style.setProperty('--dim', String(Math.max(0, Math.min(90, +st.bgDim || 0)) / 100)); host.classList.toggle('has-bg', bgOn);
+    if (rv) { const k = [ASSET_VER, S.reveal.count, S.reveal.at, S.teams.length, S.drivers.map(d => d.team + ':' + d.price + ':' + d.status).join(','), st.league, st.subtitle].join('|'); if (k !== mem.revealKey) { mem.revealKey = k; E.reveal.innerHTML = revealHTML(S); } }
+    else mem.revealKey = '';
+  }
+  function frame() {
+    requestAnimationFrame(frame); fit(); if (!S) return;
+    if (mem.needFit && E.name.clientWidth) { mem.needFit = false; fitName(); }
+    const l = S.lot, t = Date.now(), st = S.settings;
+    if (!l) { setCall(''); return; }
+    const d = driverById(S, l.driverId); if (!d) return;
+    const shuffling = !!(l.drawUntil && t < l.drawUntil);
+    if (shuffling !== mem.shuffling) { mem.shuffling = shuffling; render(); }
+    if (shuffling) { if (t - mem.shuffleAt > 85) { mem.shuffleAt = t; const pool = S.drivers.filter(x => x.status === 'offen' || x.status === 'zurueck' || x.id === d.id); setName((pool[Math.floor(Math.random() * pool.length)] || d).name); } }
+    else setName(d.name);
+    const tier = tierOf(d.stars);
+    setText(E.tierL, shuffling ? '?' : tier);
+    E.stars.style.visibility = E.meta.style.visibility = shuffling ? 'hidden' : 'visible';
+    const op = st.openingSec, cd = st.countdownSec;
+    let eyebrow = '', pill = '', pcls = '', amount = '', unit = 'Mio', small = false, sub = '', frac = 0, rtxt = '', rlbl = '', mm = false, urgent = false, idle = false, call = '';
+    if (shuffling) { eyebrow = `Los ${l.no} · Auslosung`; pill = 'Auslosung'; pcls = 'dim'; amount = '…'; unit = ''; small = true; rtxt = '?'; rlbl = 'Auslosung'; idle = true; }
+    else switch (l.phase) {
+      case 'called': eyebrow = `Los ${l.no} · Aufruf`; pill = 'Aufruf'; pcls = 'dim'; amount = 'ab ' + fmt(l.minBid); small = true; sub = 'Mindestgebot'; frac = 1; rtxt = mmss(op); mm = true; rlbl = 'Eröffnung'; idle = true; break;
+      case 'opening': { const rem = Math.max(0, (l.openingEnd - t) / 1000), n = l.openingCount != null ? l.openingCount : openingTeams(l); eyebrow = `Los ${l.no} · Eröffnung`; pill = 'Eröffnung · Gebote per DM'; amount = '???'; sub = st.showBidCount ? `${n} ${n === 1 ? 'Gebot' : 'Gebote'} eingegangen` : 'Gebote per DM an die Leitung'; frac = rem / op; rtxt = mmss(rem); mm = true; rlbl = 'Eröffnung'; break; }
+      case 'bidding': { const rem = Math.max(0, (l.countdownEnd - t) / 1000); eyebrow = `Los ${l.no} · Überbieten`; pill = l.tie ? 'Gleichstand' : 'Höchstgebot'; pcls = l.tie ? 'hot' : ''; amount = fmt(l.highest); sub = lockSVG + 'Bieter geheim'; frac = rem / cd; rtxt = String(Math.ceil(rem)); rlbl = 'Sekunden'; urgent = rem <= 5; if (st.showCalls) { if (rem <= 10 && rem > 5) call = 'Zum Ersten'; else if (rem <= 5 && rem > 0) call = 'Zum Zweiten'; } break; }
+      case 'paused': { const rem = (l.pausedRemaining || 0) / 1000, o = l.pausedPhase === 'opening'; eyebrow = `Los ${l.no} · Pause`; pill = 'Pausiert'; pcls = 'dim'; amount = l.highest != null ? fmt(l.highest) : '???'; sub = 'Gleich geht es weiter'; frac = rem / (o ? op : cd); rtxt = o ? mmss(rem) : String(Math.ceil(rem)); mm = o; rlbl = 'Pause'; idle = true; break; }
+      case 'sold': eyebrow = `Los ${l.no} · Zuschlag`; pill = 'Zuschlag'; pcls = 'hot'; amount = fmt(l.price); sub = lockSVG + 'Team bleibt geheim'; frac = 1; rtxt = lockSVG; rlbl = 'Geheim'; break;
+      case 'nobid': eyebrow = `Los ${l.no} · Kein Gebot`; pill = 'Kein Gebot'; pcls = 'dim'; amount = l.half ? 'Restrunde' : 'Später'; unit = ''; small = true; sub = l.half ? 'Wird am Ende zugeteilt' : `Neuer Versuch ab ${fmt(Math.ceil(TIERS[tier].min / 2))} Mio`; frac = 0; rtxt = '–'; idle = true; break;
+    }
+    setText(E.eyebrow, eyebrow); setText(E.pill, pill); const pc = 'ov-pill ' + pcls; if (E.pill.className !== pc) E.pill.className = pc;
+    setHTML(E.amount, esc(amount) + (unit ? `<span>${unit}</span>` : '')); E.amount.classList.toggle('small', small);
+    setHTML(E.bidsub, sub);
+    E.prg.style.strokeDashoffset = C * (1 - Math.max(0, Math.min(1, frac)));
+    setHTML(E.ringB, rtxt); E.ringB.classList.toggle('mm', mm); setText(E.ringS, rlbl);
+    E.ring.classList.toggle('urgent', urgent); E.ring.classList.toggle('idle', idle);
+    E.lowerwrap.classList.toggle('sold', l.phase === 'sold' && !shuffling);
+    if (mem.lotNo !== l.no) { mem.lotNo = l.no; mem.seq = l.bidSeq; }
+    else if (l.bidSeq !== mem.seq) { mem.seq = l.bidSeq; if (l.phase === 'bidding') { restart(E.amount, 'pop'); restart(E.lowerwrap, 'flash'); } }
+    setCall(call);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { mem.name = null; });
+  onAsset(render);
+  requestAnimationFrame(frame);
+  return { setState(s) { S = s; render(); }, setupEl: q('.ov-setup') };
+}
+
+/* ---------- Overlay-Seite ---------- */
+function startOverlay() {
+  document.documentElement.classList.add('mode-overlay'); document.body.classList.add('mode-overlay');
+  const ov = createOverlay(document.getElementById('app')), su = ov.setupEl;
+  su.innerHTML = `<div class="su-card"><div class="su-brand"><span class="grad">ZRL</span> Auktion · Overlay</div><div class="su-title">Overlay verbinden</div>
+    <p class="su-text">Raum-Code von der Ligaleitung eingeben.<br>In OBS: Rechtsklick auf die Quelle → „Interagieren“.</p>
+    <div class="su-row"><input class="su-input" maxlength="12" placeholder="XXXX-XXXX" spellcheck="false" autocomplete="off"><button class="su-btn">Verbinden</button></div>
+    <p class="su-status"></p>
+    <p class="su-foot">Läuft die Steuerung auf diesem PC, braucht es keinen Code.<button class="su-link">Ohne Code nutzen</button></p>
+    <p class="su-foot">Später ändern: im Interagieren-Fenster die Taste F2 drücken.</p></div>`;
+  const inp = su.querySelector('.su-input'), stEl = su.querySelector('.su-status'), t0 = Date.now();
+  let mode = null, raw, room = null, links = [], last = null, view = null, gotData = false, forced = false, err = '';
+  const getCode = () => { try { return normCode(localStorage.getItem(ROOM_OV_KEY) || ''); } catch (e) { return ''; } };
+  const setCode = c => { try { if (c) localStorage.setItem(ROOM_OV_KEY, c); else localStorage.removeItem(ROOM_OV_KEY); } catch (e) {} };
+  /* Variante 1: Steuerung auf demselben PC */
+  const applyLocal = r => { if (r === raw) return; raw = r; let s = null; try { s = r ? JSON.parse(r) : null; } catch (e) {} ov.setState(s && s.v === 1 ? migrate(s) : defaultState()); };
+  const pullLocal = () => { if (mode !== 'local') return; let r = null; try { r = localStorage.getItem(STORE_KEY); } catch (e) {} applyLocal(r); };
+  setInterval(pullLocal, 250);
+  addEventListener('storage', e => { if (e.key === STORE_KEY) pullLocal(); });
+  if (BC) BC.onmessage = e => { if (mode === 'local' && typeof e.data === 'string') applyLocal(e.data); };
+  setInterval(() => { if (mode === 'local') { try { localStorage.setItem(PING_KEY, String(Date.now())); } catch (e) {} } }, 1000);
+  /* Variante 2: Steuerung auf einem anderen PC, Daten über das Internet */
+  function closeLinks() { links.forEach(l => l.close()); links = []; room = null; }
+  function goLocal() { closeLinks(); mode = 'local'; raw = undefined; gotData = false; try { localStorage.setItem(PING_KEY, String(Date.now())); } catch (e) {} pullLocal(); paint(); }
+  async function goOnline(code) {
+    closeLinks(); mode = 'online'; gotData = false; last = null; view = null; err = ''; ov.setState(defaultState()); paint();
+    let r; try { r = await roomCrypto(code); } catch (e) { err = 'Dieser Browser unterstützt die Verschlüsselung nicht.'; paint(); return; }
+    if (mode !== 'online' || normCode(code) !== getCode()) return;
+    room = r; links = brokerList().map(url => new MiniMQTT(url, { onStatus: paint, onMessage: onMsg })); links.forEach(l => l.subscribe(room.topic));
+  }
+  async function onMsg(topic, bytes) {
+    const r = room; if (!r || topic !== r.topic) return;
+    let m; try { m = await unseal(r, bytes); } catch (e) { return; }
+    if (r !== room || !m || m.v !== 1 || !m.view) return;
+    const now = Date.now();
+    if (last && (m.sid === last.sid ? m.seq <= last.seq : (m.sentAt <= last.sentAt && now - last.at < 3000))) return;
+    last = { sid: m.sid, seq: m.seq, sentAt: m.sentAt, at: now };
+    view = hydrate(m.view, view); gotData = true; forced = false; ov.setState(view); paint();
+  }
+  setInterval(() => links.forEach(l => l.tick()), 1000);
+  onWake(() => links.forEach(l => l.wake()));
+  setInterval(async () => { const r = room; if (mode !== 'online' || !r) return; try { const b = await seal(r, { v: 1, kind: 'overlay', t: Date.now() }); links.forEach(l => l.publish(r.ping, b, false)); } catch (e) {} }, 3000);
+  function paint() {
+    const code = getCode(); let show = forced, status = '';
+    if (mode === 'local') {
+      let has = false; try { has = !!localStorage.getItem(STORE_KEY); } catch (e) {}
+      if (!has && Date.now() - t0 > 1500) show = true;
+      status = has ? 'Steuerung auf diesem PC gefunden.' : 'Noch keine Steuerung auf diesem PC gefunden.';
+    } else if (mode === 'online') {
+      const up = links.filter(l => l.state === 'up').length;
+      if (!gotData && Date.now() - t0 > 3000) show = true;
+      status = err || (gotData ? `Verbunden mit Raum ${showCode(code)}.`
+        : up ? `Verbunden mit Raum ${showCode(code)} (${up} von ${links.length} Servern). Warte auf die Steuerung der Ligaleitung …`
+        : links.some(l => l.tries > 2) ? 'Keine Verbindung zu den Servern. Bitte die Internetverbindung prüfen.' : `Verbinde mit Raum ${showCode(code)} …`);
+    }
+    su.classList.toggle('on', show);
+    if (stEl.textContent !== status) stEl.textContent = status;
+    if (show && document.activeElement !== inp && !inp.value) inp.value = showCode(code);
+  }
+  setInterval(paint, 500);
+  const connect = () => { const c = normCode(inp.value); if (c.length < 6) { stEl.textContent = 'Der Code hat 8 Zeichen, zum Beispiel 7KQ4-MX9P.'; return; } setCode(c); inp.value = showCode(c); forced = false; goOnline(c); };
+  su.querySelector('.su-btn').addEventListener('click', connect);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+  su.querySelector('.su-link').addEventListener('click', () => { setCode(''); inp.value = ''; forced = false; goLocal(); });
+  addEventListener('keydown', e => { if (e.key === 'F2') { forced = !forced; paint(); if (forced) inp.focus(); } else if (e.key === 'Escape' && forced) { forced = false; paint(); } });
+  const hm = (location.hash || '').match(/raum=([A-Za-z0-9-]+)/i); if (hm) setCode(normCode(hm[1]));
+  const c0 = getCode(); if (c0) goOnline(c0); else goLocal();
+}
+
+/* ---------- Startseite ---------- */
+function startStart() {
+  document.documentElement.classList.add('mode-control'); document.body.classList.add('mode-control');
+  document.getElementById('app').innerHTML = `<div class="c-top"><header class="c-head"><div class="c-brand"><span class="grad">ZRL</span> Fahrer-Auktion</div></header></div>
+  <div class="s-wrap"><div class="c-hint" style="letter-spacing:3px;text-transform:uppercase;font-weight:600;color:var(--cyan)">Realistic League</div><div class="s-title">Fahrer-Auktion</div>
+    <p class="c-sub">Wähle aus, was du öffnen möchtest.</p>
+    <div class="s-cards">
+      <a class="s-card main" href="ZRL-Teamchef.html"><b>Teamchef</b><span>Gebote für dein Team abgeben – am PC oder am Handy. Den Code bekommst du von der Ligaleitung.</span></a>
+      <a class="s-card" href="ZRL-Overlay.html"><b>Overlay</b><span>Für den Streamer: als Browserquelle in OBS einbinden, 1920 × 1080.</span></a>
+      <a class="s-card" href="ZRL-Steuerung.html"><b>Steuerung</b><span>Nur für die Ligaleitung.</span></a>
+    </div>
+    <p class="c-hint c-mt">Tipp fürs iPhone: Seite öffnen, dann Teilen → „Zum Home-Bildschirm“.</p></div>`;
+}
+
+/* ---------- Teamchef-Seite ---------- */
+function startTeam() {
+  document.documentElement.classList.add('mode-control'); document.body.classList.add('mode-control');
+  document.title = 'ZRL Auktion – Teamchef';
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="c-top"><header class="c-head"><div class="c-brand"><span class="grad" id="tLeague">ZRL</span> <span class="t-hide-sm">Auktion · </span>Teamchef</div>
+    <div class="c-head-r"><span class="t-teamname" id="tTeam" hidden></span><span class="c-sync" id="tSync" hidden></span><button class="c-small" id="tLogout" hidden>Abmelden</button></div></header></div>
+  <main class="c-main">
+    <section id="tLogin" class="t-login c-card"><h2>Teamchef-Login</h2>
+      <p class="c-hint">Gib deinen persönlichen Teamchef-Code ein. Du bekommst ihn von der Ligaleitung. Mit dem Code kannst du für dein Team bieten – gib ihn nicht weiter.</p>
+      <input id="tCode" maxlength="12" placeholder="XXXX-XXXX" spellcheck="false" autocomplete="off" autocapitalize="characters" autocorrect="off">
+      <div class="c-row c-mt"><button class="primary big" id="tLoginBtn" style="width:100%">Einloggen</button></div>
+      <p class="c-msg" id="tLoginMsg"></p></section>
+    <section id="tMain" hidden><div class="t-grid">
+      <div class="c-card" id="tLot"></div>
+      <div class="c-card" id="tBidCard"><h3>Gebot abgeben <small>verbindlich</small></h3>
+        <div id="tCant" class="c-warn" hidden></div>
+        <div class="t-amountrow"><input id="tAmt" type="text" inputmode="decimal" autocomplete="off" placeholder="Mio"><button class="primary" id="tBid">Bieten</button></div>
+        <div class="c-quick" id="tQuick"><button data-q="min">Min</button><button data-q="1">+1</button><button data-q="2">+2</button><button data-q="5">+5</button><button data-q="10">+10</button></div>
+        <p class="c-hint" id="tLimits"></p>
+        <div class="t-fb c-msg" id="tFb"></div></div>
+      <div class="c-card" id="tMyCard"><h3>Deine Gebote zu diesem Los</h3><div id="tMy"></div></div>
+      <div class="c-card" id="tTeamCard"><h3>Dein Team <small>siehst nur du</small></h3><div id="tTeamInfo"></div></div>
+    </div></section>
+  </main><div class="c-toast" id="cToast"></div>`;
+  let ch = null, links = [], tv = null, last = null, pend = {}, t0 = 0, lastMsg = 0, loginTry = 0;
+  const store = c => { try { if (c) localStorage.setItem(TEAMCODE_KEY, c); else localStorage.removeItem(TEAMCODE_KEY); } catch (e) {} };
+  const fb = (m, k) => { const el = $('#tFb'); el.textContent = m; el.className = 't-fb c-msg ' + (k || ''); };
+  const loginMsg = (m, k) => { const el = $('#tLoginMsg'); el.textContent = m; el.className = 'c-msg ' + (k || ''); };
+  function closeLinks() { links.forEach(l => l.close()); links = []; ch = null; }
+  async function login(raw) {
+    const code = normCode(raw); if (code.length < 6) return loginMsg('Der Code hat 8 Zeichen, zum Beispiel 7KQ4-MX9P.', 'bad');
+    closeLinks(); tv = null; last = null; pend = {}; t0 = Date.now(); lastMsg = 0; const my = ++loginTry; store(code);
+    $('#tCode').value = showCode(code); loginMsg('Verbinde …'); showMain(false);
+    let k; try { k = await teamCrypto(code); } catch (e) { loginMsg('Dieser Browser unterstützt die Verschlüsselung nicht. Bitte Chrome, Edge oder Firefox nutzen.', 'bad'); return; }
+    if (my !== loginTry) return;
+    ch = k; links = brokerList().map(u => new MiniMQTT(u, { onStatus: renderSync, onMessage: onMsg, onUp: ping })); links.forEach(l => l.subscribe(ch.view));
+  }
+  function logout() { closeLinks(); store(''); tv = null; showMain(false); $('#tCode').value = ''; loginMsg(''); renderSync(); }
+  function showMain(on) { $('#tMain').hidden = !on; $('#tLogin').hidden = on; $('#tLogout').hidden = !on && !ch; $('#tTeam').hidden = !on; }
+  async function onMsg(topic, bytes) {
+    const k = ch; if (!k || topic !== k.view || !bytes.length) return;
+    let m; try { m = await unseal(k, bytes); } catch (e) { return; }
+    if (k !== ch || !m || m.v !== 1 || !m.view) return;
+    const now = Date.now();
+    if (last && (m.sid === last.sid ? m.seq <= last.seq : (m.sentAt <= last.sentAt && now - last.at < 3000))) return;
+    last = { sid: m.sid, seq: m.seq, sentAt: m.sentAt, at: now }; lastMsg = now;
+    tv = hydrateTeam(m.view, tv);
+    Object.keys(pend).forEach(id => {
+      const mb = tv.lot && tv.lot.myBids.find(b => b.id === id);
+      if (mb) { fb(mb.valid ? `✓ ${fmt(mb.amount)} Mio angenommen.` : `✗ ${fmt(mb.amount)} Mio abgelehnt: ${mb.reason}`, mb.valid ? 'good' : 'bad'); delete pend[id]; }
+      else if (tv.fb && tv.fb.id === id) { fb(`✗ ${fmt(pend[id].amount)} Mio abgelehnt: ${tv.fb.reason}`, 'bad'); delete pend[id]; }
+    });
+    showMain(true); render();
+  }
+  async function ping() { const k = ch; if (!k) return; try { const b = await seal(k, { v: 1, kind: 'ping', t: Date.now() }); links.forEach(l => l.publish(k.bid, b, false)); } catch (e) {} }
+  function renderSync() {
+    const el = $('#tSync'); if (!ch) { el.hidden = true; return; } el.hidden = false;
+    const up = links.filter(l => l.state === 'up').length, fresh = Date.now() - lastMsg < 15000;
+    el.classList.toggle('ok', up > 0 && fresh);
+    el.textContent = up && fresh ? '● verbunden' : up ? '● warte auf die Leitung' : '● Verbindung wird aufgebaut';
+  }
+  function timerInfo(l, t) {
+    if (l.phase === 'opening') { const r = (l.openingEnd - t) / 1000; return { txt: mmss(r), lbl: 'Eröffnung', urgent: r <= 10 }; }
+    if (l.phase === 'bidding') { const r = Math.max(0, Math.ceil((l.countdownEnd - t) / 1000)); return { txt: r + ' s', lbl: 'Countdown', urgent: r <= 5 }; }
+    if (l.phase === 'paused') return { txt: l.pausedPhase === 'opening' ? mmss(l.pausedRemaining / 1000) : Math.ceil(l.pausedRemaining / 1000) + ' s', lbl: 'Pause', urgent: false };
+    return null;
+  }
+  function render() {
+    if (!tv) return; const l = tv.lot, t = Date.now(), tm = tv.team;
+    $('#tLeague').textContent = tv.league || 'ZRL'; $('#tTeam').textContent = tm.name;
+    const box = $('#tLot');
+    if (tv.scene === 'reveal') box.innerHTML = `<h3>Enthüllung</h3><p class="c-sub">Die Auktion ist vorbei. Gerade läuft die Enthüllung im Stream.</p>`;
+    else if (!l) box.innerHTML = `<h3>Aktuelles Los</h3><p class="c-sub">Gleich wird der nächste Fahrer aufgerufen.</p><p class="c-stat">Vergeben: ${tv.stats.sold} von ${tv.stats.total} Fahrern</p>`;
+    else {
+      const d = l.driver, drawing = !d || l.drawUntil > t;
+      let state = '';
+      if (drawing) state = '<span class="t-badge">Auslosung läuft …</span>';
+      else if (l.phase === 'called') state = '<span class="t-badge">Aufruf – die Eröffnung startet gleich</span>';
+      else if (l.phase === 'opening') state = `<div class="t-hi"><span>Dein Gebot</span><b>${l.myOpening !== null ? fmt(l.myOpening) + ' Mio' : '–'}</b></div>`;
+      else if (l.phase === 'bidding' || (l.phase === 'paused' && l.highest != null)) state = `<div class="t-hi"><span>Höchstgebot</span><b>${fmt(l.highest)} Mio</b></div>`;
+      else if (l.phase === 'sold') state = `<div class="t-hi"><span>Verkauft für</span><b>${fmt(l.price)} Mio</b></div>`;
+      else if (l.phase === 'nobid') state = '<span class="t-badge">Kein Gebot – der Fahrer kommt später erneut</span>';
+      let badge = '';
+      if (l.phase === 'opening') badge = '<span class="t-badge">Verdeckt – du siehst nur dein eigenes Gebot</span>';
+      else if (l.leading) badge = '<span class="t-badge lead">Du führst</span>';
+      else if (l.tiedIn) badge = '<span class="t-badge tie">Gleichstand – du bist dabei</span>';
+      else if (l.tie) badge = '<span class="t-badge out">Gleichstand anderer Teams</span>';
+      else if (l.phase === 'bidding') badge = '<span class="t-badge out">Du führst nicht</span>';
+      else if (l.phase === 'sold') badge = l.won ? '<span class="t-badge won">Zuschlag für dich!</span>' : '<span class="t-badge">Nicht an dich</span>';
+      else if (l.phase === 'paused') badge = '<span class="t-badge">Pausiert</span>';
+      const ti = drawing ? null : timerInfo(l, t);
+      box.innerHTML = `<h3>Los ${l.no} <small>${PHASE_LABEL[l.phase] || ''}</small></h3>
+        <div class="t-driver"><span class="c-tierbadge">${drawing ? '?' : d.tier}</span><div><b>${drawing ? '…' : esc(d.name)}</b><small>${drawing ? 'Der nächste Fahrer wird gezogen' : `${fmt(d.stars)} Sterne · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (halbiert)' : ''}`}</small></div></div>
+        ${drawing ? '' : tProfile(d, tm.id)}
+        <div class="t-row">${state}${ti ? `<div class="t-timer ${ti.urgent ? 'urgent' : ''}" data-t><span>${ti.txt}</span><small>${ti.lbl}</small></div>` : ''}</div>
+        <div class="t-state">${badge}${l.phase === 'opening' ? `<span class="c-hint" style="margin:0">${l.openingCount} ${l.openingCount === 1 ? 'Gebot' : 'Gebote'} eingegangen</span>` : ''}</div>`;
+    }
+    $('#tTeamInfo').innerHTML = `<div class="t-kv"><div><span>Restbudget</span><b>${fmt(tm.rest)} Mio</b></div><div><span>Maxgebot</span><b>${tm.free ? fmt(tm.max) + ' Mio' : '–'}</b></div><div><span>Cockpits frei</span><b>${tm.free} / 2</b></div><div><span>Ausgegeben</span><b>${fmt(tm.spent)} Mio</b></div></div>`
+      + (tm.drivers.length ? `<table><tbody>${tm.drivers.map(x => `<tr><td>${esc(x.name)} <small>${tierOf(x.stars)}-Tier</small></td><td class="num">${fmt(x.price)} Mio${x.via === 'fest' ? ' <small>fest</small>' : x.via === 'restrunde' ? ' <small>Restrunde</small>' : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="c-empty">Noch keine Fahrer.</p>');
+    const cant = $('#tCant'), can = l && l.canBid && !(l.drawUntil > t);
+    cant.hidden = !!can; cant.textContent = !l ? 'Gerade läuft kein Los.' : (l.drawUntil > t ? 'Die Auslosung läuft.' : l.cantReason);
+    $('#tBid').disabled = !can; $('#tAmt').disabled = !can; document.querySelectorAll('#tQuick button').forEach(b => b.disabled = !can);
+    $('#tLimits').textContent = can ? `Mindestens ${fmt(Math.max(l.minNext, l.minBid))} Mio · höchstens ${fmt(tm.max)} Mio` : '';
+    const my = l ? l.myBids.slice().reverse() : [];
+    $('#tMy').innerHTML = my.length ? '<div class="c-log">' + my.map(b => `<div class="c-logrow ${b.valid ? '' : 'bad'}"><time>${clock(b.at)}</time><div>${b.valid ? 'angenommen' : 'abgelehnt'}${b.valid ? '' : `<em>${esc(b.reason)}</em>`}</div><span class="a">${fmt(b.amount)} Mio</span></div>`).join('') + '</div>' : `<p class="c-empty">${l ? 'Noch keine Gebote von dir.' : '–'}</p>`;
+    updBtn(); tick();
+  }
+  function tProfile(d, me) {
+    const rows = infoRows(d.info), prev = d.prev || [];
+    if (!rows.length && !prev.length) return '';
+    return `<div class="t-prof">${rows.length ? `<dl class="t-pfrows">${rows.map(r => `<dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>` : ''}${prev.length ? `<div class="t-pfex${rows.length ? '' : ' solo'}"><span>${d.rule ? 'Gesperrte Ex-Teams' : 'Vorherige Teams'}</span><div>${prev.map(p => `<span class="t-pfteam${p.id === me && d.rule ? ' me' : ''}"><span class="tl">${logoHTML(p.id, p.name)}</span>${esc(p.name)}</span>`).join('')}</div></div>` : ''}</div>`;
+  }
+  onAsset(() => render());
+  function tick() {
+    const el = document.querySelector('#tLot [data-t]'); if (!tv || !tv.lot || !el) return;
+    const ti = timerInfo(tv.lot, Date.now()); if (!ti) return;
+    el.firstChild.textContent = ti.txt; el.classList.toggle('urgent', ti.urgent);
+  }
+  function updBtn() { const a = parseFloat(String($('#tAmt').value).replace(',', '.')); $('#tBid').textContent = isFinite(a) && a > 0 ? `${fmt(a)} Mio bieten` : 'Bieten'; }
+  async function sendBid() {
+    if (!tv || !tv.lot || !ch) return fb('Gerade läuft kein Los.', 'bad');
+    const l = tv.lot, a = parseFloat(String($('#tAmt').value).replace(',', '.'));
+    if (!l.canBid) return fb(l.cantReason, 'bad');
+    if (!isFinite(a) || a <= 0) return fb('Bitte einen Betrag eingeben.', 'bad');
+    if (a < Math.max(l.minNext, l.minBid) - 1e-9) return fb(`Mindestens ${fmt(Math.max(l.minNext, l.minBid))} Mio.`, 'bad');
+    if (a > tv.team.max + 1e-9) return fb(`Höchstens ${fmt(tv.team.max)} Mio – die Reserve fürs zweite Cockpit muss bleiben.`, 'bad');
+    const id = rid() + rid(), k = ch;
+    let b; try { b = await seal(k, { v: 1, kind: 'bid', lot: l.no, amount: a, id, t: Date.now() }); } catch (e) { return fb('Gebot konnte nicht verschlüsselt werden.', 'bad'); }
+    const n = links.filter(x => x.publish(k.bid, b, false)).length;
+    if (!n) return fb('Keine Verbindung zum Server – das Gebot wurde nicht gesendet. Bitte per DM an die Leitung.', 'bad');
+    pend[id] = { amount: a, at: Date.now() }; fb(`${fmt(a)} Mio gesendet – warte auf Bestätigung …`);
+    $('#tAmt').value = ''; updBtn(); $('#tAmt').focus();
+  }
+  $('#tLoginBtn').addEventListener('click', () => login($('#tCode').value));
+  $('#tCode').addEventListener('keydown', e => { if (e.key === 'Enter') login($('#tCode').value); });
+  $('#tLogout').addEventListener('click', logout);
+  $('#tBid').addEventListener('click', sendBid);
+  $('#tAmt').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendBid(); } });
+  $('#tAmt').addEventListener('input', updBtn);
+  $('#tQuick').addEventListener('click', e => {
+    const b = e.target.closest('button[data-q]'); if (!b || !tv || !tv.lot) return; const l = tv.lot, inp = $('#tAmt'), cur = parseFloat(String(inp.value).replace(',', '.'));
+    if (b.dataset.q === 'min') inp.value = Math.max(l.minNext, l.minBid);
+    else { const base = isFinite(cur) ? cur : (l.phase === 'bidding' ? l.highest : (l.myOpening !== null ? l.myOpening : l.minBid)); inp.value = base + +b.dataset.q; }
+    updBtn(); inp.focus();
+  });
+  setInterval(() => {
+    tick(); renderSync(); links.forEach(l => l.tick());
+    const t = Date.now();
+    Object.keys(pend).forEach(id => { if (t - pend[id].at > 6000) { fb(`Keine Bestätigung für ${fmt(pend[id].amount)} Mio erhalten. Verbindung prüfen oder per DM an die Leitung.`, 'bad'); delete pend[id]; } });
+    if (ch && !tv && t0 && t - t0 > 8000) loginMsg('Noch keine Daten erhalten. Ist der Code richtig und die Steuerung der Leitung geöffnet?', 'bad');
+  }, 200);
+  setInterval(ping, 5000);
+  onWake(() => { links.forEach(l => l.wake()); render(); renderSync(); });
+  const hc = (location.hash || '').match(/code=([A-Za-z0-9-]+)/i); if (hc) store(normCode(hc[1]));
+  const saved = (() => { try { return normCode(localStorage.getItem(TEAMCODE_KEY) || ''); } catch (e) { return ''; } })();
+  if (saved) login(saved);
+}
+
+/* ---------- Steuerung ---------- */
+function startControl() {
+  document.documentElement.classList.add('mode-control'); document.body.classList.add('mode-control');
+  document.title = 'ZRL Auktion – Steuerung';
+  let S = loadState(), lastRaw = null;
+  let undo = []; try { undo = JSON.parse(localStorage.getItem(UNDO_KEY) || '[]') || []; } catch (e) { undo = []; }
+  const ui = { tab: 'auktion', team: null, driverDirty: false };
+  try { ui.tab = localStorage.getItem(TAB_KEY) || 'auktion'; } catch (e) {}
+  const app = document.getElementById('app');
+  app.innerHTML = `
+  <div class="c-top"><header class="c-head">
+    <div class="c-brand"><span class="grad" id="cLeague"></span> Auktion · Steuerung</div>
+    <div class="c-head-r"><span class="c-sync" id="cSync">● Overlay nicht verbunden</span><span class="c-sync" id="cTeamsOn">Teamchefs 0/11</span><button class="c-small" id="cVis"></button><button class="c-small" id="cUndo">↶ Rückgängig</button></div>
+  </header>
+  <nav class="c-tabs" id="cTabs"><button data-tab="auktion">Auktion</button><button data-tab="teams">Teams &amp; Budgets</button><button data-tab="fahrer">Fahrer</button><button data-tab="reveal">Enthüllung</button><button data-tab="setup">Einstellungen</button><button data-tab="teamchefs">Teamchefs</button><button data-tab="hilfe">Verbindung</button></nav></div>
+  <main class="c-main">
+    <section class="c-tab" data-tab="auktion"><div class="c-grid2"><div>
+      <div class="c-card"><h3>Vorschau <small>so sieht es im Stream aus</small></h3><div class="c-preview" id="cPreview"></div></div>
+      <div class="c-card" id="cLot"></div></div><div>
+      <div class="c-card"><h3>Gebot eintragen <small>Team bleibt geheim</small></h3>
+        <div class="c-teamgrid" id="cTeams"></div>
+        <div class="c-bidrow"><input id="cAmt" type="text" inputmode="decimal" autocomplete="off" placeholder="Betrag in Mio"><button class="primary" id="cBid">Eintragen ⏎</button></div>
+        <div class="c-quick" id="cQuick"><button data-q="min">Min</button><button data-q="1">+1</button><button data-q="2">+2</button><button data-q="5">+5</button><button data-q="10">+10</button></div>
+        <div class="c-msg" id="cMsg"></div></div>
+      <div class="c-card"><h3>Gebote zu diesem Los <small>nur für die Leitung</small></h3><div id="cLog"></div></div>
+    </div></div></section>
+    <section class="c-tab" data-tab="teams"><div class="c-card"><h3>Teams &amp; Budgets <small>nicht ins Bild nehmen</small></h3><div class="c-tablewrap" id="cTeamTable"></div></div></section>
+    <section class="c-tab" data-tab="fahrer">
+      <div class="c-card"><h3>Fahrerliste</h3><div class="c-tablewrap" id="cDriverTable"></div></div>
+      <div class="c-card"><h3>Fahrer fest vergeben <small>Teamchef-Fahrer, Sonderfälle</small></h3>
+        <div class="c-form3"><select id="cFixD"></select><select id="cFixT"></select><input id="cFixP" type="number" min="0" step="1" placeholder="Preis in Mio"></div>
+        <div class="c-row"><button id="cFix">Zuordnen</button></div>
+        <p class="c-hint">Fest vergebene Fahrer kommen nicht in die Auktion und erscheinen erst bei der Enthüllung.</p></div>
+      <div class="c-card"><h3>Restrunde</h3><p class="c-hint">Teilt alle übrigen Fahrer automatisch zu: das schwächste Auto mit freiem Cockpit zuerst, jeweils der niedrigst bewertete Fahrer, zum halben Mindestgebot (höchstens Restbudget). Die Ex-Team-Regel wird dabei beachtet.</p><div class="c-row"><button id="cRest" class="confirm2">Restrunde ausführen</button></div></div>
+      <div class="c-card"><h3>Fahrer-Infos &amp; Ex-Teams <small>jederzeit änderbar</small></h3>
+        <p class="c-hint">Ein Block pro Fahrer, Blöcke durch eine Leerzeile trennen. Erste Zeile: der Name wie in der Fahrerliste. Dann <code>Ex-Teams: Team A, Team B</code> und beliebig viele Zeilen <code>Bezeichnung: Wert</code> – zum Beispiel <code>Nationalität: Deutschland</code>. Leere Werte werden nicht angezeigt. Im Overlay erscheinen bis zu 6 Angaben rechts im Fahrerprofil, dazu die gesperrten Ex-Teams mit Logo.</p>
+        <p class="c-hint">Ein Block ersetzt die Infos dieses Fahrers. Fahrer, die nicht im Text stehen, bleiben unverändert – du kannst also auch nur einen Teil einfügen.</p>
+        <textarea id="cInfoText" rows="14" spellcheck="false"></textarea>
+        <div class="c-row c-mt"><button id="cInfoApply" class="primary">Infos übernehmen</button><button id="cInfoReload">Gespeicherten Stand laden</button></div>
+        <p class="c-msg c-infomsg" id="cInfoMsg"></p></div>
+      <div class="c-card"><h3>Fahrerliste bearbeiten</h3><p class="c-hint">Eine Zeile pro Fahrer: <code>Name;Sterne</code> – zum Beispiel <code>Ricewolf;9,5</code>. Geht nur, solange noch kein Los gelaufen ist.</p><textarea id="cDriverText" rows="10"></textarea><div class="c-row c-mt"><button id="cDriverApply" class="confirm2">Liste übernehmen</button></div></div>
+    </section>
+    <section class="c-tab" data-tab="reveal">
+      <div class="c-card" id="cReveal"></div>
+      <div class="c-card"><h3>Gebotsprotokoll</h3><p class="c-hint">Alle Gebote mit Uhrzeit, auch ungültige. Nach der Enthüllung veröffentlichen. Die Sicherung enthält auch Raum-Code und Team-Codes – damit kannst du die Steuerung in einen anderen Browser oder auf ein anderes Gerät umziehen, ohne neue Codes zu verteilen.</p>
+        <div class="c-row"><button id="cCsvDl">CSV herunterladen</button><button id="cCsvCopy">In Zwischenablage</button><button id="cJsonDl">Sicherung speichern</button><label class="c-filebtn">Sicherung laden<input type="file" id="cJsonLoad" accept=".json,application/json"></label></div>
+        <textarea id="cCsv" rows="8" readonly class="c-mt"></textarea></div>
+    </section>
+    <section class="c-tab" data-tab="setup">
+      <div class="c-card"><h3>Anzeige</h3>
+        <div class="c-form2"><label>Liga-Name<input id="sLeague"></label><label>Untertitel<input id="sSub"></label></div>
+        <label class="c-check"><input type="checkbox" id="sStats"> Statistik oben rechts</label>
+        <label class="c-check"><input type="checkbox" id="sPool"> Fahrerpool links einblenden</label>
+        <label class="c-check"><input type="checkbox" id="sCount"> Anzahl der Eröffnungsgebote zeigen</label>
+        <label class="c-check"><input type="checkbox" id="sCalls"> „Zum Ersten / Zum Zweiten“ einblenden</label>
+        <label class="c-check"><input type="checkbox" id="sProfile"> Fahrerprofil rechts einblenden (wenn Infos oder Ex-Teams hinterlegt sind)</label></div>
+      <div class="c-card"><h3>Hintergrund <small>Datei hintergrund.jpg</small></h3>
+        <p class="c-hint">Lege ein Bild mit dem Namen <code>hintergrund.jpg</code> (oder .png / .webp), am besten 1920 × 1080, in denselben Ordner wie <code>ZRL-Overlay.html</code> – bei GitHub Pages also einfach mit ins Repository. Das Overlay zeigt es dann ganz hinten. „Overlay: aus“ blendet nur die Auktion aus, der Hintergrund bleibt.</p>
+        <div class="c-form2"><label>Hintergrund zeigen<select id="sBgMode"><option value="always">Immer</option><option value="reveal">Nur bei der Enthüllung</option><option value="off">Nie</option></select></label><label>Abdunkeln in %<input id="sBgDim" type="number" min="0" max="90" step="5"></label></div>
+        <div id="sBgStat" class="c-bgstat"></div></div>
+      <div class="c-card"><h3>Team-Logos <small>Ordner logos</small></h3>
+        <p class="c-hint">Logos als PNG mit transparentem Hintergrund in einen Ordner <code>logos</code> neben die HTML-Dateien legen, benannt nach dem Team-Kürzel unten (z. B. <code>logos/mercedes.png</code>). Ohne Datei zeigt das Overlay ein Kürzel. Geprüft wird der Ordner dieser Steuerung – das Overlay und die Teamchef-Seite suchen jeweils in ihrem eigenen Ordner.</p>
+        <div class="c-logos" id="sLogos"></div>
+        <div class="c-row c-mt"><button id="sAssetRe">Dateien neu prüfen</button></div></div>
+      <div class="c-card"><h3>Regeln</h3>
+        <div class="c-form2"><label>Eröffnung in Sekunden<input id="sOpen" type="number" min="10" step="5"></label><label>Countdown in Sekunden<input id="sCd" type="number" min="5" step="1"></label><label>Mindestschritt in Mio<input id="sStep" type="number" min="0.5" step="0.5"></label><label>Reserve fürs 2. Cockpit in Mio<input id="sRes" type="number" min="0" step="1"></label></div>
+        <label class="c-check"><input type="checkbox" id="sSLimit"> Höchstens ein S-Fahrer pro Team</label>
+        <label class="c-check"><input type="checkbox" id="sExTeam"> Ex-Team-Regel: Fahrer dürfen nicht zu ihren vorherigen Teams (im Tab „Fahrer“ eintragen)</label></div>
+      <div class="c-card"><h3>Startbudgets <small>in Mio</small></h3><div class="c-form3" id="sBudgets"></div></div>
+      <div class="c-card"><h3>Zurücksetzen</h3><p class="c-hint"><b>Auktion zurücksetzen</b> löscht alle Gebote und Zuschläge, Fahrerliste und Einstellungen bleiben. <b>Alles auf Anfang</b> stellt auch Fahrer, Budgets und Einstellungen zurück.</p>
+        <div class="c-row"><button id="cResetAuction" class="danger confirm2">Auktion zurücksetzen</button><button id="cResetAll" class="danger confirm2">Alles auf Anfang</button></div></div>
+    </section>
+    <section class="c-tab" data-tab="teamchefs">
+      <div class="c-card"><h3>Teamchef-Zugänge <small>Gebote direkt von den Teamchefs</small></h3>
+        <p class="c-hint">Jeder Teamchef bekommt einen eigenen Code und gibt seine Gebote in der Datei <code>ZRL-Teamchef.html</code> selbst ab. Die Steuerung prüft jedes Gebot sofort nach denselben Regeln und trägt es ein. Ein Code gilt nur für sein Team: Teamchefs sehen nur ihr eigenes Budget und ihre eigenen Käufe. Gebote per DM kannst du weiterhin selbst eintragen.</p>
+        <div id="tcWarn"></div>
+        <label class="c-check"><input type="checkbox" id="sTeamBids"> Gebote von Teamchefs annehmen</label>
+        <div class="c-tablewrap c-mt" id="tcTable"></div>
+        <div class="c-row c-mt"><button id="tcCopyAll">Alle Codes kopieren</button></div>
+        <p class="c-hint">„Nachricht“ kopiert eine fertige Anleitung mit dem Code für den jeweiligen Teamchef. „Neuer Code“ sperrt den alten sofort – zum Beispiel, wenn ein Code weitergegeben wurde.</p>
+      </div>
+    </section>
+    <section class="c-tab" data-tab="hilfe">
+      <div class="c-card"><h3>Online-Version <small>für iPhone und Links</small></h3>
+        <p class="c-hint">Auf dem iPhone laufen die Seiten nur, wenn sie online liegen. Lade dafür alle Dateien bei einem kostenlosen Anbieter wie GitHub Pages hoch und trag hier die Adresse ein. Dann enthalten die Nachrichten für Teamchefs und Streamer fertige Links: antippen, und man ist eingeloggt bzw. verbunden.</p>
+        <label>Adresse der Online-Version<input id="oWeb" placeholder="https://deinname.github.io/zrl-auktion/" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div id="oWebLinks" class="c-mt"></div>
+      </div>
+      <div class="c-card"><h3>Streamer zeigt das Overlay <small>zwei PCs, übers Internet</small></h3>
+        <p class="c-hint">Du steuerst hier, der Streamer zeigt das Overlay in seinem OBS. Sein PC bekommt nur, was im Bild zu sehen ist – wer welchen Fahrer gekauft hat, erfährt er erst bei der Enthüllung. Die Daten laufen verschlüsselt über zwei öffentliche Server gleichzeitig.</p>
+        <label class="c-check"><input type="checkbox" id="oOn"> Online an das Streamer-Overlay senden</label>
+        <div class="c-room"><div><span>Raum-Code</span><b id="oCode"></b></div><div class="c-row"><button id="oCopy">Code kopieren</button><button id="oNew" class="danger confirm2">Neuer Code</button></div></div>
+        <div id="oStatus" class="c-ostatus"></div>
+        <h4 class="c-h4">Nachricht für den Streamer</h4>
+        <textarea id="oMsg" rows="10" readonly></textarea>
+        <div class="c-row c-mt"><button id="oMsgCopy" class="primary">Nachricht kopieren</button></div>
+        <p class="c-hint">Dazu die Datei <code>ZRL-Overlay.html</code> mitschicken. Den Code nicht öffentlich posten: Wer ihn kennt, könnte Daten ins Overlay schicken. Dieses Fenster während der Auktion offen lassen.</p>
+      </div>
+      <div class="c-card"><h3>Alles auf einem PC <small>Steuerung im OBS-Dock</small></h3>
+      <ol class="c-steps">
+        <li><b>Beide Dateien in denselben Ordner legen</b> und dort lassen: <code>ZRL-Overlay.html</code> und <code>ZRL-Steuerung.html</code>.</li>
+        <li><b>Overlay als Browserquelle:</b> Quelle hinzufügen → Browser → „Lokale Datei“ anhaken → <code>ZRL-Overlay.html</code> wählen. Breite 1920, Höhe 1080. Die Quelle über alle anderen legen. Kein Raum-Code nötig.</li>
+        <li><b>Steuerung als Dock:</b> Menü Docks → Benutzerdefinierte Browser-Docks → Name „Auktion“, als URL die Adresse unten eintragen. Oben in der Steuerung muss dann <b>„Overlay verbunden (dieser PC)“</b> stehen.
+          <div class="c-urlrow"><input id="cUrlCtl" readonly><button id="cUrlCopy">Kopieren</button></div></li>
+        <li><b>Falls nicht verbunden:</b> Die Steuerung stattdessen als zweite Browserquelle (Lokale Datei, 1280 × 1000) in eine eigene Szene „Steuerung“ legen, die nicht gestreamt wird. Dann im Quellen-Fenster Rechtsklick → „Interagieren“.</li>
+      </ol>
+      <p class="c-hint c-mt">Alles wird automatisch gespeichert, auch wenn OBS oder der Browser abstürzt. Die Steuerung nur einmal geöffnet haben. Vor dem Abend einen Probelauf machen und danach unter Einstellungen „Auktion zurücksetzen“.</p>
+    </div></section>
+  </main><div class="c-toast" id="cToast"></div>`;
+
+  const ov = createOverlay($('#cPreview'), { preview: true });
+
+  /* Speichern & Rückgängig */
+  function persist() { lastRaw = saveState(S); ov.setState(S); renderAll(); publishView(); }
+  function saveUndo() { if (undo.length > 30) undo = undo.slice(-30); try { localStorage.setItem(UNDO_KEY, JSON.stringify(undo)); } catch (e) { undo = undo.slice(-10); try { localStorage.setItem(UNDO_KEY, JSON.stringify(undo)); } catch (e2) {} } }
+  function act(fn, okMsg) { const snap = JSON.stringify(S); const err = fn(S); if (typeof err === 'string') { toast(err, 'bad'); return false; } undo.push(snap); saveUndo(); persist(); if (okMsg) toast(okMsg, 'good'); return true; }
+  function doUndo() {
+    if (!undo.length) return toast('Nichts zum Rückgängigmachen.');
+    S = migrate(JSON.parse(undo.pop())); saveUndo();
+    const l = S.lot;
+    if (l && (l.phase === 'opening' || l.phase === 'bidding')) { const end = l.phase === 'opening' ? l.openingEnd : l.countdownEnd; const rem = end - Date.now(); if (rem < 4000) { l.pausedPhase = l.phase; l.pausedRemaining = l.phase === 'bidding' ? S.settings.countdownSec * 1000 : Math.max(rem, 15000); l.phase = 'paused'; persist(); return toast('Rückgängig gemacht. Das Los ist pausiert – mit „Weiter“ fortsetzen.'); } }
+    persist(); toast('Rückgängig gemacht.');
+  }
+
+  /* Hilfsfunktionen UI */
+  let toastT; function toast(m, k) { const el = $('#cToast'); el.textContent = m; el.className = 'c-toast on ' + (k || ''); clearTimeout(toastT); toastT = setTimeout(() => el.className = 'c-toast', 3200); }
+  function msg(m, k) { const el = $('#cMsg'); el.textContent = m; el.className = 'c-msg ' + (k || ''); }
+  function armed(btn) { if (btn.dataset.armed) { delete btn.dataset.armed; btn.classList.remove('armed'); return true; } btn.dataset.armed = '1'; btn.dataset.label = btn.textContent; btn.textContent = 'Sicher? Nochmal klicken'; btn.classList.add('armed'); setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.classList.remove('armed'); btn.textContent = btn.dataset.label; } }, 3500); return false; }
+  function download(name, text, type) { try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); } catch (e) { toast('Download geht hier nicht – bitte „In Zwischenablage“ nutzen.', 'bad'); } }
+  function copyText(text) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); if (!ok && navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Kopiert.', 'good'), () => toast('Kopieren nicht möglich – Text markieren und mit Strg+C kopieren.', 'bad')); else toast(ok ? 'Kopiert.' : 'Kopieren nicht möglich.', ok ? 'good' : 'bad'); }
+  const leaderText = l => l.tie ? `Gleichstand: ${l.leaders.map(id => teamName(S, id)).join(', ')} – bei Ablauf gewinnt ${teamName(S, weakest(S, l.leaders))}` : `führt: <b>${esc(teamName(S, l.leaders[0]))}</b>`;
+
+  /* Render */
+  function renderHead() {
+    $('#cLeague').textContent = S.settings.league || 'ZRL';
+    const v = $('#cVis'); v.textContent = S.settings.overlayVisible ? 'Overlay: an' : 'Overlay: aus'; v.classList.toggle('primary', !S.settings.overlayVisible);
+    $('#cUndo').disabled = !undo.length;
+    document.querySelectorAll('#cTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === ui.tab));
+    document.querySelectorAll('.c-tab').forEach(sct => sct.classList.toggle('on', sct.dataset.tab === ui.tab));
+  }
+  function renderLot() {
+    const l = S.lot, box = $('#cLot'), c = { offen: 0, zurueck: 0, uebrig: 0, verkauft: 0, fest: 0 }; S.drivers.forEach(d => c[d.status]++);
+    if (!l) {
+      const avail = S.drivers.filter(d => d.status === 'offen' || d.status === 'zurueck');
+      const sel = ui.selDriver && avail.some(d => d.id === ui.selDriver) ? ui.selDriver : (avail[0] || {}).id;
+      const opts = ['S', 'A', 'B', 'C'].map(k => { const g = avail.filter(d => tierOf(d.stars) === k).sort((a, b) => b.stars - a.stars); return g.length ? `<optgroup label="${k}-Tier">${g.map(d => `<option value="${d.id}" ${d.id === sel ? 'selected' : ''}>${esc(d.name)} · ${fmt(d.stars)} Sterne${d.status === 'zurueck' ? ' · 2. Versuch' : ''}</option>`).join('')}</optgroup>` : ''; }).join('');
+      box.innerHTML = `<h3>Nächstes Los <small>Los ${S.lotCounter + 1}</small></h3>` + (avail.length
+        ? `<select id="cSel">${opts}</select><div class="c-row c-mt"><button class="primary big" data-act="draw">Zufällig ziehen</button><button data-act="call">Ausgewählten aufrufen</button></div>`
+        : `<div class="c-warn">Alle Fahrer sind durch. ${c.uebrig ? c.uebrig + ' Fahrer übrig – Restrunde im Tab „Fahrer“.' : 'Weiter mit der Enthüllung.'}</div>`)
+        + `<p class="c-stat">Offen ${c.offen} · Später ${c.zurueck} · Übrig ${c.uebrig} · Vergeben ${c.verkauft + c.fest} von ${S.drivers.length}</p>`;
+      return;
+    }
+    const d = driverById(S, l.driverId), tier = tierOf(d.stars);
+    let body = '';
+    if (l.phase === 'called') body = `<div class="c-row c-mt"><button class="primary big" data-act="open">Eröffnung starten (${mmss(S.settings.openingSec)})</button><button data-act="cancel">Aufruf zurücknehmen</button></div>`;
+    else if (l.phase === 'opening') body = `<div class="c-timerrow"><span class="c-timer" data-timer></span><span class="c-sub">Eröffnung läuft · ${openingTeams(l)} ${openingTeams(l) === 1 ? 'Team hat' : 'Teams haben'} geboten</span></div><div class="c-row"><button class="primary" data-act="endopen">Eröffnung jetzt beenden</button><button data-act="pause">Pause</button></div>`;
+    else if (l.phase === 'bidding') body = `<div class="c-timerrow"><span class="c-timer" data-timer></span><span class="c-sub">Höchstgebot <b>${fmt(l.highest)} Mio</b> · ${leaderText(l)}</span></div><div class="c-row"><button class="confirm2" data-act="hammer">Zuschlag jetzt</button><button data-act="pause">Pause</button></div>`;
+    else if (l.phase === 'paused') body = `<div class="c-timerrow"><span class="c-timer">${l.pausedPhase === 'opening' ? mmss(l.pausedRemaining / 1000) : Math.ceil(l.pausedRemaining / 1000)}</span><span class="c-sub">Pausiert (${l.pausedPhase === 'opening' ? 'Eröffnung' : 'Countdown'})${l.highest != null ? ` · Höchstgebot <b>${fmt(l.highest)} Mio</b> · ${leaderText(l)}` : ''}</span></div><div class="c-row"><button class="primary big" data-act="resume">Weiter</button></div>`;
+    else if (l.phase === 'sold') { const t = teamById(S, l.winner); body = `<div class="c-result"><span>Verkauft an</span><b>${esc(t.name)}</b><span>für ${fmt(l.price)} Mio${l.tieBroken ? ' · Gleichstand, das schwächere Auto gewinnt' : ''}</span></div><p class="c-hint">Stille DM an ${esc(t.name)} schicken. Restbudget jetzt ${fmt(teamRest(S, t.id))} Mio, ${teamFree(S, t.id)} Cockpit(s) frei.</p><div class="c-row"><button class="primary big" data-act="next">Nächster Fahrer</button></div>`; }
+    else if (l.phase === 'nobid') body = `<div class="c-result"><span>Kein gültiges Gebot</span><b>${l.half ? 'Restrunde' : 'Zurück in den Topf'}</b><span>${l.half ? 'Der Fahrer wird in der Restrunde zugeteilt.' : 'Kommt nach den anderen Fahrern erneut, dann ab ' + fmt(Math.ceil(TIERS[tier].min / 2)) + ' Mio.'}</span></div><div class="c-row"><button class="primary big" data-act="next">Nächster Fahrer</button></div>`;
+    const abort = ['opening', 'bidding', 'paused'].includes(l.phase) ? `<div class="c-row c-mt"><button class="danger confirm2 c-small" data-act="abort">Los abbrechen</button></div>` : '';
+    const exs = exTeams(S, d), exl = exs.length ? `<div class="c-exline">${S.settings.exTeamRule ? 'Gesperrt (Ex-Teams)' : 'Vorherige Teams (Regel aus)'}: ${exs.map(id => esc(teamName(S, id))).join(', ')}</div>` : '';
+    box.innerHTML = `<h3>Los ${l.no} <small>${PHASE_LABEL[l.phase]}</small></h3><div class="c-lothead"><span class="c-tierbadge">${tier}</span><div><b>${esc(d.name)}</b><small>${fmt(d.stars)} Sterne · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (halbiert)' : ''}</small></div><span class="c-phase ph-${l.phase}">${PHASE_LABEL[l.phase]}</span></div>${exl}${body}${abort}`;
+    updateTimers();
+  }
+  function renderTeamBtns() {
+    const l = S.lot, d = l && driverById(S, l.driverId);
+    $('#cTeams').innerHTML = S.teams.map(t => {
+      const free = teamFree(S, t.id), max = teamMax(S, t.id);
+      let note = free <= 0 ? 'Cockpits voll' : `max ${fmt(max)} · ${2 - free}/2`, dim = free <= 0 || (l && max < l.minBid);
+      if (d && S.settings.sLimit && tierOf(d.stars) === 'S' && hasS(S, t.id)) { dim = true; note = 'hat S-Fahrer'; }
+      if (l && l.phase === 'opening') { const ob = bestOpening(l, t.id); if (ob !== null) note = `geboten ${fmt(ob)} · max ${fmt(max)}`; }
+      const ex = isExTeam(S, d, t.id); if (ex) { dim = true; note = 'Ex-Team · gesperrt'; }
+      const lead = l && ['bidding', 'paused'].includes(l.phase) && l.leaders.includes(t.id);
+      return `<button class="c-team ${ui.team === t.id ? 'sel' : ''} ${lead ? 'lead' : ''} ${dim ? 'dim' : ''} ${ex ? 'ex' : ''} ${teamOnline(t.id) ? 'onl' : ''}" data-team="${t.id}"><b>${esc(t.name)}</b><small>${note}</small></button>`;
+    }).join('');
+  }
+  function renderLog() {
+    const l = S.lot, el = $('#cLog');
+    if (!l || !l.bids.length) { el.innerHTML = `<p class="c-empty">${l ? 'Noch keine Gebote.' : 'Kein Los aktiv.'}</p>`; return; }
+    el.innerHTML = '<div class="c-log">' + l.bids.slice().reverse().map(b => `<div class="c-logrow ${b.valid ? '' : 'bad'}"><time>${clock(b.t)}</time><div><b>${esc(teamName(S, b.team))}</b> <small>${b.phase === 'opening' ? 'Eröffnung' : b.phase === 'spaet' ? 'nach Entscheidung' : 'Überbieten'}</small>${b.src === 'online' ? '<span class="c-src">online</span>' : ''}${b.valid ? '' : `<em>${esc(b.reason)}</em>`}</div><span class="a">${fmt(b.amount)} Mio</span></div>`).join('') + '</div>';
+  }
+  function renderTeamTable() {
+    $('#cTeamTable').innerHTML = `<table><thead><tr><th>Team</th><th class="num">Start</th><th class="num">Ausgegeben</th><th class="num">Rest</th><th class="num">Cockpits</th><th class="num">Maxgebot</th><th>Fahrer</th></tr></thead><tbody>${S.teams.map(t => { const ds = teamDrivers(S, t.id); return `<tr><td><b>${esc(t.name)}</b></td><td class="num">${fmt(t.budget)}</td><td class="num">${fmt(teamSpent(S, t.id))}</td><td class="num">${fmt(teamRest(S, t.id))}</td><td class="num">${ds.length}/2</td><td class="num">${teamFree(S, t.id) ? fmt(teamMax(S, t.id)) : '–'}</td><td>${ds.map(d => `${esc(d.name)} <small>${fmt(d.price)} Mio${d.via === 'fest' ? ', fest' : d.via === 'restrunde' ? ', Restrunde' : ''}</small>`).join('<br>') || '<small>–</small>'}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function renderDriverTable() {
+    const ds = S.drivers.slice().sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
+    $('#cDriverTable').innerHTML = `<table><thead><tr><th>Fahrer</th><th class="num">Sterne</th><th>Tier</th><th>Status</th><th>Team</th><th class="num">Preis</th><th>Ex-Teams</th><th class="num">Infos</th></tr></thead><tbody>${ds.map(d => `<tr><td>${esc(d.name)}</td><td class="num">${fmt(d.stars)}</td><td>${tierOf(d.stars)}</td><td><span class="tag ${d.status}">${STATUS_LABEL[d.status]}</span></td><td>${d.team ? esc(teamName(S, d.team)) : '<small>–</small>'}</td><td class="num">${d.price != null ? fmt(d.price) + ' Mio' : '–'}</td><td>${exTeams(S, d).map(id => esc(teamName(S, id))).join(', ') || '<small>–</small>'}</td><td class="num">${infoRows(d.info).length || '<small>–</small>'}</td></tr>`).join('')}</tbody></table>`;
+    const fd = $('#cFixD'), ft = $('#cFixT'), pd = fd.value, pt = ft.value;
+    fd.innerHTML = '<option value="">Fahrer wählen</option>' + ds.filter(d => !isAssigned(d)).map(d => `<option value="${d.id}">${esc(d.name)} (${tierOf(d.stars)})</option>`).join('');
+    ft.innerHTML = '<option value="">Team wählen</option>' + S.teams.filter(t => teamFree(S, t.id) > 0).map(t => `<option value="${t.id}">${esc(t.name)} · Rest ${fmt(teamRest(S, t.id))}</option>`).join('');
+    fd.value = pd; ft.value = pt;
+    const ta = $('#cDriverText'); if (!ui.driverDirty && document.activeElement !== ta) ta.value = S.drivers.map(d => `${d.name};${fmt(d.stars)}`).join('\n');
+    const ti = $('#cInfoText'); if (!ui.infoDirty && document.activeElement !== ti) ti.value = profilesText(S);
+  }
+  function renderReveal() {
+    const order = S.teams.slice().reverse(), n = order.length, cnt = Math.min(S.reveal.count, n), on = S.scene === 'reveal';
+    const left = S.drivers.filter(d => !isAssigned(d)).length;
+    let warn = '';
+    if (activeLot(S)) warn = '<div class="c-warn">Es läuft noch ein Los. Erst beenden, dann enthüllen.</div>';
+    else if (left) warn = `<div class="c-warn">${left} Fahrer ${left === 1 ? 'ist' : 'sind'} noch nicht vergeben. Restrunde im Tab „Fahrer“.</div>`;
+    const btns = on
+      ? `<button class="primary big" data-act="rnext" ${cnt >= n ? 'disabled' : ''}>${cnt < n ? 'Aufdecken: ' + esc(order[cnt].name) : 'Alle Teams aufgedeckt'}</button><button data-act="rall" ${cnt >= n ? 'disabled' : ''}>Alle aufdecken</button><button data-act="rback" ${cnt ? '' : 'disabled'}>Letztes verdecken</button><button data-act="rend">Zurück zur Auktionsansicht</button>`
+      : `<button class="primary big" data-act="rstart">Enthüllung starten</button>`;
+    $('#cReveal').innerHTML = `<h3>Enthüllung <small>${on ? 'läuft im Overlay' : 'Auktionsansicht aktiv'}</small></h3>${warn}<p class="c-hint">Reihenfolge vom schwächsten zum stärksten Auto. Jeder Klick deckt ein Team im Overlay auf.</p><div class="c-row">${btns}</div><div class="c-revlist">${order.map((t, i) => `<div class="${i < cnt ? 'done' : i === cnt && on ? 'nx' : ''}">${i + 1}. ${esc(t.name)}${i < cnt ? ' ✓' : ''}</div>`).join('')}</div>`;
+    const ta = $('#cCsv'); if (document.activeElement !== ta) ta.value = protocolCSV(S);
+  }
+  function renderSettings() {
+    const st = S.settings, setV = (id, v) => { const el = $('#' + id); if (document.activeElement === el) return; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; };
+    setV('sLeague', st.league); setV('sSub', st.subtitle); setV('sStats', st.showStats); setV('sPool', st.showPool); setV('sCount', st.showBidCount); setV('sCalls', st.showCalls);
+    setV('sTeamBids', st.teamBids);
+    setV('sOpen', st.openingSec); setV('sCd', st.countdownSec); setV('sStep', st.step); setV('sRes', st.reserve); setV('sSLimit', st.sLimit);
+    setV('sExTeam', st.exTeamRule); setV('sProfile', st.showProfile); setV('sBgMode', st.bgMode); setV('sBgDim', st.bgDim);
+    renderAssets();
+    const box = $('#sBudgets');
+    if (box.children.length !== S.teams.length) box.innerHTML = S.teams.map(t => `<label>${esc(t.name)}<input type="number" min="0" step="1" data-budget="${t.id}"></label>`).join('');
+    box.querySelectorAll('input').forEach(inp => { if (document.activeElement !== inp) inp.value = (teamById(S, inp.dataset.budget) || {}).budget; });
+  }
+  function renderAssets() {
+    const bu = bgURL(), bi = ASSETS.hintergrund || {};
+    $('#sBgStat').innerHTML = bu === null ? '<span class="c-hint">Suche hintergrund.jpg …</span>'
+      : bu ? `<span class="c-bgthumb" style="background-image:url('${esc(bu)}')"></span><span class="c-hint" style="color:var(--good)">Gefunden: <b>${esc(bi.file)}</b> (${esc(bi.size)} Pixel)${S.settings.bgMode === 'off' ? ' – zurzeit ausgeschaltet' : ''}</span>`
+      : '<span class="c-hint">Neben dieser Steuerung liegt keine Datei <b>hintergrund.jpg</b>. Das ist kein Problem, solange sie neben dem Overlay liegt.</span>';
+    $('#sLogos').innerHTML = S.teams.map(t => { const u = logoURL(t.id), a = ASSETS['logos/' + t.id] || {}; return `<div class="c-logo ${u ? 'ok' : ''}"><span class="tl">${logoHTML(t.id, t.name)}</span><b>${esc(t.name)}</b><small>${u ? '✓ gefunden' : u === null ? 'suche …' : esc(t.id) + '.png fehlt'}</small></div>`; }).join('');
+  }
+  onAsset(() => { ov.setState(S); renderAssets(); });
+  function renderAll() { renderHead(); renderLot(); renderTeamBtns(); renderLog(); renderTeamTable(); renderDriverTable(); renderReveal(); renderSettings(); if (typeof renderTeamchefs === 'function' && ui.tab === 'teamchefs') renderTeamchefs(); }
+  function updateTimers() {
+    const l = S.lot, el = document.querySelector('#cLot [data-timer]'); if (!l || !el) return;
+    const t = Date.now();
+    if (l.phase === 'opening') { el.textContent = mmss((l.openingEnd - t) / 1000); el.classList.remove('urgent'); }
+    else if (l.phase === 'bidding') { const r = Math.max(0, Math.ceil((l.countdownEnd - t) / 1000)); el.textContent = r + ' s'; el.classList.toggle('urgent', r <= 5); }
+  }
+
+  /* Gebote */
+  function submitBid() {
+    const l = S.lot, amt = parseFloat(String($('#cAmt').value).replace(',', '.'));
+    if (!l || !['opening', 'bidding', 'paused'].includes(l.phase)) return msg(l && l.phase === 'called' ? 'Erst die Eröffnung starten.' : 'Gerade läuft keine Bietphase.', 'bad');
+    if (!ui.team) return msg('Erst ein Team wählen.', 'bad');
+    if (l.phase === 'paused') return msg('Das Los ist pausiert. Erst „Weiter“ drücken.', 'bad');
+    if (!isFinite(amt) || amt <= 0) return msg('Bitte einen Betrag eingeben.', 'bad');
+    const reason = validateBid(S, ui.team, amt), name = teamName(S, ui.team);
+    act(s => { recordBid(s, ui.team, amt, reason); });
+    if (reason) msg('Ungültig: ' + reason + ' (im Protokoll vermerkt)', 'bad');
+    else { msg(`${name}: ${fmt(amt)} Mio eingetragen.`, 'good'); $('#cAmt').value = ''; ui.team = null; renderTeamBtns(); }
+    $('#cAmt').focus();
+  }
+
+  /* Ereignisse */
+  $('#cTabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; ui.tab = b.dataset.tab; try { localStorage.setItem(TAB_KEY, ui.tab); } catch (er) {} renderHead(); });
+  $('#cVis').addEventListener('click', () => act(s => { s.settings.overlayVisible = !s.settings.overlayVisible; }));
+  $('#cUndo').addEventListener('click', doUndo);
+  $('#cLot').addEventListener('change', e => { if (e.target.id === 'cSel') ui.selDriver = e.target.value; });
+  $('#cLot').addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    if (b.classList.contains('confirm2') && !armed(b)) return;
+    const a = b.dataset.act;
+    if (a === 'draw') act(drawDriver);
+    else if (a === 'call') { const v = ($('#cSel') || {}).value; act(s => callDriver(s, v, false)); }
+    else if (a === 'open') act(startOpening);
+    else if (a === 'cancel') act(cancelCall);
+    else if (a === 'endopen') act(endOpening);
+    else if (a === 'pause') act(pauseLot);
+    else if (a === 'resume') act(resumeLot);
+    else if (a === 'hammer') act(hammer);
+    else if (a === 'next') { act(nextLot); ui.team = null; msg(''); }
+    else if (a === 'abort') act(abortLot, 'Los abgebrochen. Der Fahrer bleibt im Topf.');
+  });
+  $('#cTeams').addEventListener('click', e => { const b = e.target.closest('button[data-team]'); if (!b) return; ui.team = ui.team === b.dataset.team ? null : b.dataset.team; renderTeamBtns(); $('#cAmt').focus(); });
+  $('#cBid').addEventListener('click', submitBid);
+  $('#cAmt').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitBid(); } });
+  $('#cQuick').addEventListener('click', e => {
+    const b = e.target.closest('button[data-q]'); if (!b) return; const l = S.lot; if (!l) return;
+    const input = $('#cAmt'), cur = parseFloat(String(input.value).replace(',', '.'));
+    if (b.dataset.q === 'min') input.value = l.phase === 'bidding' ? l.highest + (+S.settings.step || 1) : l.minBid;
+    else { const base = isFinite(cur) ? cur : (l.phase === 'bidding' ? l.highest : l.minBid); input.value = base + +b.dataset.q; }
+    input.focus();
+  });
+  $('#cFix').addEventListener('click', () => {
+    const p = parseFloat(String($('#cFixP').value).replace(',', '.')), did = $('#cFixD').value, tid = $('#cFixT').value, ex = isExTeam(S, driverById(S, did), tid);
+    if (act(s => assignFixed(s, did, tid, p), ex ? `Zugeordnet – Achtung: ${teamName(S, tid)} ist ein Ex-Team dieses Fahrers. Die Ex-Team-Regel wurde übergangen.` : 'Fahrer zugeordnet.')) $('#cFixP').value = '';
+  });
+  $('#cRest').addEventListener('click', e => {
+    if (!armed(e.currentTarget)) return;
+    if (act(restrunde, 'Restrunde zugeteilt.')) { const left = S.drivers.filter(d => !isAssigned(d)); if (left.length) toast(`${left.length} Fahrer nicht zugeteilt (Ex-Team-Regel oder keine freien Cockpits): ${left.map(d => d.name).join(', ')} – bitte unter „Fest vergeben“ zuordnen.`, 'bad'); }
+  });
+  $('#cInfoText').addEventListener('input', () => { ui.infoDirty = true; });
+  $('#cInfoReload').addEventListener('click', () => { ui.infoDirty = false; $('#cInfoText').value = profilesText(S); const m = $('#cInfoMsg'); m.textContent = ''; m.className = 'c-msg c-infomsg'; });
+  $('#cInfoApply').addEventListener('click', () => {
+    const m = $('#cInfoMsg'), r = parseProfiles(S, $('#cInfoText').value);
+    const say = (t, k) => { m.textContent = t; m.className = 'c-msg c-infomsg ' + k; };
+    if (r.errs.length) return say('Nichts übernommen – bitte korrigieren:\n' + r.errs.slice(0, 6).join('\n') + (r.errs.length > 6 ? `\n… und ${r.errs.length - 6} weitere` : ''), 'bad');
+    if (!r.items.length) return say('Im Text steht kein Fahrer.', 'bad');
+    const n = r.items.length, ex = r.items.filter(b => b.prev && b.prev.length).length;
+    if (act(s => { r.items.forEach(b => { const d = driverById(s, b.d.id); if (!d) return; d.info = b.info; if (b.prev !== undefined) d.prev = b.prev; }); })) {
+      ui.infoDirty = false; $('#cInfoText').value = profilesText(S);
+      say(`✓ Infos für ${n} ${n === 1 ? 'Fahrer' : 'Fahrer'} übernommen${ex ? `, davon ${ex} mit Ex-Teams` : ''}.`, 'good');
+    }
+  });
+  $('#cDriverText').addEventListener('input', () => { ui.driverDirty = true; });
+  $('#cDriverApply').addEventListener('click', e => {
+    if (!armed(e.currentTarget)) return;
+    const { out, errs } = parseDrivers($('#cDriverText').value);
+    if (errs.length) return toast('Zeile ' + errs.join(', ') + ': Format ist Name;Sterne', 'bad');
+    if (!out.length) return toast('Die Liste ist leer.', 'bad');
+    if (act(s => { if (s.history.length || s.lot || s.drivers.some(isAssigned)) return 'Nur vor dem ersten Los möglich – sonst erst „Auktion zurücksetzen“.'; const old = {}; s.drivers.forEach(d => { old[normKey(d.name)] = d; }); s.drivers = out.map(([n, st]) => { const d = mkDriver(n, st), o = old[normKey(n)]; if (o) { d.info = o.info || []; d.prev = o.prev || []; } return d; }); }, `${out.length} Fahrer übernommen.`)) ui.driverDirty = false;
+  });
+  $('#cReveal').addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return; const a = b.dataset.act, n = S.teams.length;
+    if (a === 'rstart') act(s => { if (activeLot(s)) return 'Es läuft noch ein Los.'; s.scene = 'reveal'; });
+    else if (a === 'rnext') act(s => { if (s.reveal.count >= n) return 'Alle Teams sind aufgedeckt.'; s.reveal.count++; s.reveal.at = Date.now(); });
+    else if (a === 'rall') act(s => { s.reveal.count = n; s.reveal.at = Date.now(); });
+    else if (a === 'rback') act(s => { s.reveal.count = Math.max(0, s.reveal.count - 1); s.reveal.at = Date.now(); });
+    else if (a === 'rend') act(s => { s.scene = 'auction'; });
+  });
+  $('#cCsvDl').addEventListener('click', () => download('ZRL-Gebotsprotokoll.csv', '﻿' + protocolCSV(S), 'text/csv;charset=utf-8'));
+  $('#cCsvCopy').addEventListener('click', () => copyText(protocolCSV(S)));
+  $('#cJsonDl').addEventListener('click', () => download('ZRL-Auktion-Sicherung.json', JSON.stringify(Object.assign({}, S, { _zugang: { raum: online.code, teams: teamCodes, web: webBase } }), null, 1), 'application/json'));
+  $('#cJsonLoad').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return; const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const s = JSON.parse(rd.result); if (!s || s.v !== 1 || !Array.isArray(s.drivers)) throw 0;
+        const z = s._zugang; delete s._zugang;
+        undo.push(JSON.stringify(S)); saveUndo(); S = migrate(s);
+        if (z) {
+          if (normCode(z.raum).length >= 6) { online.code = normCode(z.raum); try { localStorage.setItem(ROOM_CTL_KEY, online.code); } catch (er) {} }
+          if (z.teams && typeof z.teams === 'object') { teamCodes = Object.assign({}, z.teams); ensureCodes(); saveCodes(); }
+          if (z.web && !webBase) { webBase = normBase(z.web); try { localStorage.setItem(WEBURL_KEY, webBase); } catch (er) {} }
+          startOnline();
+        }
+        persist(); renderTeamchefs(); renderOnline();
+        toast(z ? 'Sicherung geladen – inklusive Raum-Code und Team-Codes.' : 'Sicherung geladen.', 'good');
+      } catch (er) { toast('Diese Datei ist keine gültige Sicherung.', 'bad'); }
+      e.target.value = '';
+    };
+    rd.readAsText(f);
+  });
+  const bindSet = (id, key, kind) => $('#' + id).addEventListener('change', e => act(s => {
+    const el = e.target; let v = kind === 'bool' ? el.checked : kind === 'num' ? parseFloat(String(el.value).replace(',', '.')) : el.value;
+    if (kind === 'num' && (!isFinite(v) || v < 0)) return 'Bitte eine gültige Zahl eingeben.';
+    s.settings[key] = v;
+  }));
+  bindSet('sLeague', 'league'); bindSet('sSub', 'subtitle'); bindSet('sStats', 'showStats', 'bool'); bindSet('sPool', 'showPool', 'bool'); bindSet('sCount', 'showBidCount', 'bool'); bindSet('sCalls', 'showCalls', 'bool');
+  bindSet('sOpen', 'openingSec', 'num'); bindSet('sCd', 'countdownSec', 'num'); bindSet('sStep', 'step', 'num'); bindSet('sRes', 'reserve', 'num'); bindSet('sSLimit', 'sLimit', 'bool'); bindSet('sTeamBids', 'teamBids', 'bool');
+  bindSet('sExTeam', 'exTeamRule', 'bool'); bindSet('sProfile', 'showProfile', 'bool'); bindSet('sBgMode', 'bgMode');
+  $('#sBgDim').addEventListener('change', e => { const v = parseFloat(String(e.target.value).replace(',', '.')); act(s => { if (!isFinite(v) || v < 0 || v > 90) return 'Bitte 0 bis 90 eingeben.'; s.settings.bgDim = v; }); });
+  $('#sAssetRe').addEventListener('click', () => { recheckAssets(); renderAssets(); toast('Dateien werden neu geprüft.'); });
+  $('#sBudgets').addEventListener('change', e => { const id = e.target.dataset.budget; if (!id) return; const v = parseFloat(String(e.target.value).replace(',', '.')); act(s => { if (!isFinite(v) || v < 0) return 'Bitte eine gültige Zahl eingeben.'; teamById(s, id).budget = v; }); });
+  $('#cResetAuction').addEventListener('click', e => { if (!armed(e.currentTarget)) return; act(resetAuction, 'Auktion zurückgesetzt.'); });
+  $('#cResetAll').addEventListener('click', e => { if (!armed(e.currentTarget)) return; undo.push(JSON.stringify(S)); saveUndo(); S = defaultState(); ui.driverDirty = false; ui.infoDirty = false; persist(); toast('Alles auf Anfang gesetzt.', 'good'); });
+  const ctlUrl = location.href.split('#')[0];
+  $('#cUrlCtl').value = ctlUrl;
+  $('#cUrlCopy').addEventListener('click', () => copyText(ctlUrl));
+
+  /* Online-Verbindung zum Streamer */
+  const online = { on: true, code: '', room: null, links: [], seq: 0, sid: rid() + rid(), lastPub: 0, lastPing: 0, busy: false, again: false, err: '' };
+  /* Teamchef-Codes: bleiben auch nach „Alles auf Anfang“ gleich */
+  let teamCodes = {}; try { teamCodes = JSON.parse(localStorage.getItem(TEAMCODES_KEY) || '{}') || {}; } catch (e) { teamCodes = {}; }
+  const saveCodes = () => { try { localStorage.setItem(TEAMCODES_KEY, JSON.stringify(teamCodes)); } catch (e) {} };
+  function ensureCodes() { let c = false; S.teams.forEach(t => { if (normCode(teamCodes[t.id]).length < 6) { teamCodes[t.id] = newRoomCode(); c = true; } }); if (c) saveCodes(); }
+  ensureCodes();
+  const tch = {}, teamSeen = {}, teamFb = {}, seenIds = new Set();
+  function teamOnline(id) { return Date.now() - (teamSeen[id] || 0) < 12000; }
+  async function deriveTeams() {
+    await Promise.all(S.teams.map(async t => {
+      const c = teamCodes[t.id]; if (tch[t.id] && tch[t.id].code === c) return;
+      try { const k = await teamCrypto(c); if (teamCodes[t.id] !== c) return; tch[t.id] = { code: c, ch: k }; online.links.forEach(l => l.subscribe(k.bid)); } catch (e) {}
+    }));
+  }
+  function onOnlineMsg(topic, bytes) {
+    const r = online.room; if (r && topic === r.ping) return onPing(topic, bytes);
+    for (const id in tch) if (tch[id].ch.bid === topic) return onTeamMsg(id, bytes);
+  }
+  async function onTeamMsg(tid, bytes) {
+    const e = tch[tid]; if (!e) return; let m;
+    try { m = await unseal(e.ch, bytes); } catch (er) { return; }
+    if (!m || m.v !== 1) return;
+    teamSeen[tid] = Date.now();
+    if (m.kind !== 'bid' || !m.id || seenIds.has(m.id)) return;
+    seenIds.add(m.id);
+    const amt = +m.amount, name = teamName(S, tid), l = S.lot;
+    if (l && l.bids.some(b => b.id === m.id)) return;
+    const reject = reason => { teamFb[tid] = { id: m.id, reason, at: Date.now() }; publishView(); };
+    if (!S.settings.teamBids) return reject('Online-Gebote sind gerade gesperrt. Bitte per DM an die Leitung.');
+    if (!l || l.no !== m.lot) return reject('Dieses Los ist schon vorbei.');
+    if (l.phase === 'called') return reject('Die Eröffnung hat noch nicht begonnen.');
+    if (l.phase === 'sold' || l.phase === 'nobid') {
+      act(s => { const b = { t: Date.now(), team: tid, amount: amt, phase: 'spaet', valid: false, reason: 'Zu spät: Das Los war schon entschieden.', src: 'online', id: m.id }; s.lot.bids.push(b); const h = s.history.filter(x => x.no === s.lot.no).pop(); if (h) h.bids.push(b); });
+      return;
+    }
+    const reason = validateBid(S, tid, amt);
+    act(s => { recordBid(s, tid, amt, reason, { src: 'online', id: m.id }); });
+    toast(reason ? `${name} (online): ${fmt(amt)} Mio abgelehnt – ${reason}` : `${name} bietet ${fmt(amt)} Mio (online)`, reason ? 'bad' : 'good');
+  }
+  const teamRules = 'Am Auktionsabend gibst du dort deine Gebote selbst ab. Du siehst das aktuelle Los, den Countdown, das Höchstgebot, ob du führst, dein Restbudget und dein Maxgebot. Gebote sind verbindlich und zählen erst, wenn sie bei der Leitung ankommen – also nicht erst in der letzten Sekunde bieten. Den Code nicht weitergeben: Damit kann man für dein Team bieten.';
+  const teamLink = id => `${webBase}ZRL-Teamchef.html#code=${normCode(teamCodes[id])}`;
+  const teamMessage = id => webBase ? `Hi! Dein Teamchef-Zugang für die Fahrer-Auktion (${teamName(S, id)}):
+
+${teamLink(id)}
+
+Einfach antippen – am PC oder am Handy – und du bist eingeloggt. Auf dem iPhone kannst du die Seite über Teilen → „Zum Home-Bildschirm“ wie eine App ablegen. Falls nach dem Code gefragt wird: ${showCode(teamCodes[id])}
+
+${teamRules}` : `Hi! Dein Teamchef-Zugang für die Fahrer-Auktion (${teamName(S, id)}):
+
+1. Die Datei ZRL-Teamchef.html speichern und mit Doppelklick im Browser öffnen (Chrome, Edge oder Firefox).
+2. Deinen Code ${showCode(teamCodes[id])} eingeben → „Einloggen“.
+
+Am Auktionsabend gibst du dort deine Gebote selbst ab. Du siehst das aktuelle Los, den Countdown, das Höchstgebot, ob du führst, dein Restbudget und dein Maxgebot. Gebote sind verbindlich und zählen erst, wenn sie bei der Leitung ankommen – also nicht erst in der letzten Sekunde bieten. Den Code nicht weitergeben: Damit kann man für dein Team bieten.`;
+  function renderTeamchefs() {
+    const box = $('#tcTable'); if (!box) return;
+    $('#tcWarn').innerHTML = !online.on ? '<div class="c-warn">Online-Senden ist aus (Tab „Verbindung“). Ohne Online-Verbindung können Teamchefs nicht bieten.</div>' : online.err ? `<div class="c-warn">${esc(online.err)}</div>` : '';
+    box.innerHTML = `<table><thead><tr><th>Team</th><th>Code</th><th>Status</th><th></th></tr></thead><tbody>${S.teams.map(t => {
+      const seen = teamSeen[t.id]; const st = teamOnline(t.id) ? '<span class="c-on">● online</span>' : seen ? `<small>zuletzt ${clock(seen)}</small>` : '<small>noch nie</small>';
+      return `<tr><td><b>${esc(t.name)}</b></td><td><span class="c-code">${showCode(teamCodes[t.id])}</span></td><td>${st}</td><td><div class="c-row" style="justify-content:flex-end"><button class="c-small" data-tc="msg" data-team="${t.id}">Nachricht</button><button class="c-small danger confirm2" data-tc="new" data-team="${t.id}">Neuer Code</button></div></td></tr>`;
+    }).join('')}</tbody></table>`;
+  }
+  function renderTeamsOn() {
+    const n = S.teams.filter(t => teamOnline(t.id)).length, el = $('#cTeamsOn');
+    el.textContent = `Teamchefs online ${n}/${S.teams.length}`; el.classList.toggle('ok', n > 0); el.hidden = !online.on;
+  }
+  let lastOnlKey = '';
+  try { online.on = localStorage.getItem(ONLINE_KEY) !== '0'; online.code = normCode(localStorage.getItem(ROOM_CTL_KEY) || ''); } catch (e) {}
+  if (online.code.length < 6) { online.code = newRoomCode(); try { localStorage.setItem(ROOM_CTL_KEY, online.code); } catch (e) {} }
+  function stopOnline() { online.links.forEach(l => l.close()); online.links = []; online.room = null; }
+  async function startOnline() {
+    stopOnline(); online.err = ''; renderOnline(); if (!online.on) return;
+    const code = online.code; let r;
+    try { r = await roomCrypto(code); } catch (e) { online.err = 'Die Verschlüsselung wird in diesem Browser nicht unterstützt. Bitte Chrome, Edge oder das OBS-Dock nutzen.'; renderOnline(); return; }
+    if (code !== online.code || !online.on) return;
+    online.room = r;
+    online.links = brokerList().map(url => new MiniMQTT(url, { onStatus: renderOnline, onUp: () => publishView(), onMessage: onOnlineMsg }));
+    online.links.forEach(l => l.subscribe(r.ping)); Object.keys(tch).forEach(k => delete tch[k]); await deriveTeams(); renderOnline(); publishView();
+  }
+  async function publishView() {
+    if (!online.on || !online.room) return;
+    if (online.busy) { online.again = true; return; }
+    online.busy = true;
+    try {
+      do { online.again = false; const r = online.room; if (!r) break;
+        const seq = ++online.seq;
+        const b = await seal(r, { v: 1, sid: online.sid, seq, sentAt: Date.now(), view: publicView(S) });
+        if (r === online.room) online.links.forEach(l => l.publish(r.topic, b, true));
+        for (const t of S.teams) {
+          const e = tch[t.id]; if (!e) continue;
+          const f = teamFb[t.id] && Date.now() - teamFb[t.id].at < 60000 ? teamFb[t.id] : null;
+          const tb = await seal(e.ch, { v: 1, sid: online.sid, seq, sentAt: Date.now(), view: teamView(S, t.id, f) });
+          if (tch[t.id] === e) online.links.forEach(l => l.publish(e.ch.view, tb, true));
+        }
+        online.lastPub = Date.now();
+      } while (online.again);
+    } catch (e) { console.error(e); } finally { online.busy = false; }
+  }
+  async function onPing(topic, bytes) { const r = online.room; if (!r || topic !== r.ping) return; try { const m = await unseal(r, bytes); if (m && m.kind === 'overlay') online.lastPing = Date.now(); } catch (e) {} }
+  let webBase = ''; try { webBase = normBase(localStorage.getItem(WEBURL_KEY) || ''); } catch (e) {}
+  if (!webBase && /^https?:$/.test(location.protocol)) webBase = normBase(location.href);
+  const streamerMessage = () => webBase ? `Hi! Für die Fahrer-Auktion brauchst du nur das Overlay – steuern werde ich es von meinem PC aus.
+
+1. In OBS: Quelle hinzufügen → Browser. „Lokale Datei“ NICHT anhaken, sondern als URL eintragen:
+${webBase}ZRL-Overlay.html#raum=${normCode(online.code)}
+2. Breite 1920, Höhe 1080. Die Quelle in der Szene ganz nach oben legen.
+
+Steht dort „Warte auf die Steuerung der Ligaleitung“, ist alles richtig – den Rest mache ich. Den Link bitte nicht weitergeben.` : `Hi! Für die Fahrer-Auktion brauchst du nur das Overlay – steuern werde ich es von meinem PC aus.
+
+1. Die Datei ZRL-Overlay.html speichern.
+2. In OBS: Quelle hinzufügen → Browser → „Lokale Datei“ anhaken → die Datei wählen. Breite 1920, Höhe 1080. Die Quelle in der Szene ganz nach oben legen.
+3. Rechtsklick auf die Quelle → „Interagieren“ → Raum-Code ${showCode(online.code)} eingeben → „Verbinden“.
+
+Steht dort „Warte auf die Steuerung der Ligaleitung“, ist alles richtig – den Rest mache ich. Den Code bitte nicht weitergeben.`;
+  function renderOnline() {
+    $('#oCode').textContent = showCode(online.code); $('#oOn').checked = online.on;
+    const host = u => { try { return new URL(u).hostname; } catch (e) { return u; } };
+    const lab = { up: 'verbunden', connecting: 'verbinde …', down: 'getrennt – neuer Versuch läuft', closed: 'aus', idle: '…' };
+    const t = Date.now(), fresh = t - online.lastPing < 8000;
+    $('#oStatus').innerHTML = !online.on ? '<p class="c-hint">Online-Senden ist aus. Ein Overlay beim Streamer bekommt keine Daten.</p>'
+      : online.err ? `<div class="c-warn">${esc(online.err)}</div>`
+      : online.links.map((l, i) => `<div class="c-orow"><span>Server ${i + 1}<small>${esc(host(l.url))}</small></span><b class="${l.state === 'up' ? 'ok' : ''}">${lab[l.state] || l.state}</b></div>`).join('')
+        + `<div class="c-orow"><span>Overlay beim Streamer</span><b class="${fresh ? 'ok' : ''}">${fresh ? 'verbunden' : online.lastPing ? 'zuletzt um ' + clock(online.lastPing) : 'noch nicht verbunden'}</b></div>`;
+    const ta = $('#oMsg'); if (document.activeElement !== ta) ta.value = streamerMessage();
+    const w = $('#oWeb'); if (document.activeElement !== w) w.value = webBase;
+    $('#oWebLinks').innerHTML = webBase ? `<div class="c-orow"><span>Startseite</span><b><code>${esc(webBase)}</code></b></div><div class="c-orow"><span>Overlay mit Raum-Code</span><b><code>${esc(webBase)}ZRL-Overlay.html#raum=${normCode(online.code)}</code></b></div><p class="c-hint">Die Teamchef-Links mit Code findest du im Tab „Teamchefs“ unter „Nachricht“.</p>` : '';
+  }
+  function renderSync() {
+    let p = 0; try { p = +localStorage.getItem(PING_KEY) || 0; } catch (e) {}
+    const t = Date.now(), loc = t - p < 3500, rem = !!online.room && t - online.lastPing < 8000, el = $('#cSync');
+    el.classList.toggle('ok', loc || rem);
+    el.textContent = loc && rem ? '● Overlay verbunden (hier + Streamer)' : rem ? '● Streamer-Overlay verbunden' : loc ? '● Overlay verbunden (dieser PC)' : '● Overlay nicht verbunden';
+  }
+  $('#oWeb').addEventListener('change', e => { webBase = normBase(e.target.value); try { localStorage.setItem(WEBURL_KEY, webBase); } catch (er) {} renderOnline(); toast(webBase ? 'Online-Adresse gespeichert. Die Nachrichten enthalten jetzt Links.' : 'Online-Adresse entfernt.', 'good'); });
+  onWake(() => online.links.forEach(l => l.wake()));
+  $('#oOn').addEventListener('change', e => { online.on = e.target.checked; try { localStorage.setItem(ONLINE_KEY, online.on ? '1' : '0'); } catch (er) {} startOnline(); });
+  $('#oCopy').addEventListener('click', () => copyText(showCode(online.code)));
+  $('#oMsgCopy').addEventListener('click', () => copyText(streamerMessage()));
+  $('#tcTable').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-tc]'); if (!b) return; const id = b.dataset.team;
+    if (b.dataset.tc === 'msg') return copyText(teamMessage(id));
+    if (!armed(b)) return;
+    const old = tch[id]; teamCodes[id] = newRoomCode(); saveCodes(); delete tch[id]; delete teamSeen[id];
+    if (old) online.links.forEach(l => l.publish(old.ch.view, new Uint8Array(0), true));
+    await deriveTeams(); publishView(); renderTeamchefs(); renderTeamBtns();
+    toast(`Neuer Code für ${teamName(S, id)}: ${showCode(teamCodes[id])}. Der alte gilt nicht mehr.`, 'good');
+  });
+  $('#tcCopyAll').addEventListener('click', () => copyText(S.teams.map(t => `${t.name}: ${showCode(teamCodes[t.id])}`).join('\n')));
+  $('#oNew').addEventListener('click', e => { if (!armed(e.currentTarget)) return; online.code = newRoomCode(); online.lastPing = 0; try { localStorage.setItem(ROOM_CTL_KEY, online.code); } catch (er) {} startOnline(); toast('Neuer Code. Der Streamer muss ihn im Overlay eingeben.', 'good'); });
+
+  /* Takt: Zeitabläufe, Verbindung, Abgleich – läuft auch, wenn das Fenster im Hintergrund ist */
+  const onTick = makeTicker(100); let tickN = 0;
+  onTick(() => {
+    const l = S.lot, t = Date.now();
+    if (l && l.phase === 'opening' && t >= l.openingEnd) act(endOpening);
+    else if (l && l.phase === 'bidding' && t >= l.countdownEnd) act(hammer);
+    updateTimers();
+    if (++tickN % 10) return;
+    online.links.forEach(k => k.tick());
+    if (online.room) { const lt = S.lot, active = lt && (lt.phase === 'opening' || lt.phase === 'bidding' || (lt.drawUntil && lt.drawUntil > t)); if (active || t - online.lastPub > 10000) publishView(); }
+    renderSync(); renderTeamsOn(); if (ui.tab === 'hilfe') renderOnline(); if (ui.tab === 'teamchefs') renderTeamchefs();
+    const ok = S.teams.map(x => teamOnline(x.id) ? 1 : 0).join(''); if (ok !== lastOnlKey) { lastOnlKey = ok; renderTeamBtns(); }
+    let r = null; try { r = localStorage.getItem(STORE_KEY); } catch (e) {}
+    if (r && r !== lastRaw) { try { const s = JSON.parse(r); if (s && s.v === 1) { S = migrate(s); lastRaw = r; ov.setState(S); renderAll(); publishView(); } } catch (e) {} }
+  });
+
+  lastRaw = saveState(S); ov.setState(S); renderAll(); renderOnline(); renderSync(); renderTeamchefs(); renderTeamsOn(); startOnline();
+}
+
+/* ---------- Start ---------- */
+(function () {
+  const h = (location.hash || '').replace('#', '').toLowerCase();
+  const mode = h === 'overlay' ? 'overlay' : h === 'steuerung' ? 'control' : h === 'teamchef' ? 'team' : MODE;
+  if (mode === 'overlay') startOverlay(); else if (mode === 'team') startTeam(); else if (mode === 'start') startStart(); else startControl();
+})();
+</script>
+</body>
+</html>
