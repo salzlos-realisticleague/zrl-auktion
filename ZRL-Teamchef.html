@@ -109,8 +109,11 @@ html.mode-overlay,body.mode-overlay{background:transparent!important;overflow:hi
 .ov-driver{padding:26px 36px 26px 40px;display:flex;flex-direction:column;justify-content:center;min-width:0}
 .ov-eyebrow{font:600 19px/1 var(--sans);letter-spacing:4px;text-transform:uppercase;color:var(--cyan);white-space:nowrap}
 .ov-name{font:800 italic 104px/1.1 var(--cond);text-transform:uppercase;white-space:nowrap;overflow:hidden;margin:8px 0 10px;padding-right:14px}
-.ov-starsrow{display:flex;align-items:center;gap:20px;min-height:28px}
-.ov-stars{display:flex;gap:4px}
+.ov-starsrow{display:flex;align-items:baseline;gap:22px;min-height:34px}
+.ov-stars{display:flex;align-items:baseline;gap:10px}
+.ov-stars em{font:600 16px/1 var(--sans);font-style:normal;letter-spacing:3px;text-transform:uppercase;color:var(--cyan)}
+.ov-stars b{font:800 italic 38px/1 var(--cond);background:var(--gradText);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:4px}
+.ov-stars i{font:700 italic 22px/1 var(--cond);color:var(--body)}
 .st-wrap{position:relative;width:28px;height:28px;flex:none}
 .st-wrap svg{width:28px;height:28px;display:block}
 .st-half{position:absolute;left:0;top:0;width:14px;height:28px;overflow:hidden}
@@ -317,6 +320,10 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:#0E
 .c-h4{font:700 italic 17px/1.2 var(--cond);text-transform:uppercase;letter-spacing:.4px;margin:16px 0 8px}
 .c-team.onl small::before{content:'● ';color:var(--good)}
 .c-team.ex small{color:var(--bad)}
+.c-minrow{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:8px;background:#100E28;border:1px solid var(--line)}
+.c-minrow label{display:flex;flex-direction:column;gap:5px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);flex:1;min-width:150px}
+.c-minrow input{font-size:20px;font-weight:700}
+.c-val{width:90px;padding:5px 7px;text-align:right}
 .c-exline{margin-top:8px;font-size:13px;color:var(--bad)}
 .c-logos{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:8px}
 .c-logo{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:8px;background:#100E28;border:1px solid var(--line);text-align:center}
@@ -403,10 +410,14 @@ const STORE_KEY = 'zrl-auktion-v1', PING_KEY = 'zrl-auktion-ping', UNDO_KEY = 'z
 const ROOM_CTL_KEY = 'zrl-auktion-raum-steuerung', ROOM_OV_KEY = 'zrl-auktion-raum-overlay', ONLINE_KEY = 'zrl-auktion-online', BROKER_KEY = 'zrl-auktion-server';
 const TEAMCODES_KEY = 'zrl-auktion-teamcodes', TEAMCODE_KEY = 'zrl-auktion-teamchef-code';
 const DEFAULT_BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
-const TIERS = { S: { min: 15 }, A: { min: 10 }, B: { min: 5 }, C: { min: 2 } };
-const tierOf = s => s >= 8 ? 'S' : s >= 6 ? 'A' : s >= 5 ? 'B' : 'C';
+/* Marktwert in Mio = Mindestgebot. Das Tier ergibt sich aus dem Marktwert (Grenzen in den Einstellungen). */
+let TIER_LIM = { S: 15, A: 10, B: 5 };
+const syncTiers = st => { if (st) TIER_LIM = { S: isFinite(+st.tierS) ? +st.tierS : 15, A: isFinite(+st.tierA) ? +st.tierA : 10, B: isFinite(+st.tierB) ? +st.tierB : 5 }; };
+const tierOf = v => v >= TIER_LIM.S ? 'S' : v >= TIER_LIM.A ? 'A' : v >= TIER_LIM.B ? 'B' : 'C';
+const starsToValue = st => st >= 8 ? 15 : st >= 6 ? 10 : st >= 5 ? 5 : 2;   /* alte Stände mit Sternen */
+const halfMin = v => Math.ceil((+v || 0) / 2);
 const DEFAULT_TEAMS = [['mercedes','Mercedes',85],['ferrari','Ferrari',85],['redbull','Red Bull',95],['mclaren','McLaren',95],['williams','Williams',95],['racingbulls','Racing Bulls',105],['alpine','Alpine',105],['audi','Audi',105],['haas','Haas',115],['cadillac','Cadillac',115],['astonmartin','Aston Martin',115]];
-const DEFAULT_DRIVERS = [['Tim Uhlmann',9.5],['Ricewolf',9.5],['Raphael',7],['Tyler Paulmann',7],['Hasefloxi',7],['URL Salzlos',6.5],['Marcel Gaming',6.5],['Griplow',6],['Philipp Übersteuern',5.5],['GhettoVieh',5.5],['Tannenzapfen',5],['Tarkinara',5],['David Salvatore',4.5],['Nictab',4.5],['Vesper Jupiter',4.5],['Priimex',4.5],['Jamie',4.5],['Mixo',4],['Justin',4],['K_P_8_4',4],['EliasW',4]];
+const DEFAULT_DRIVERS = [['Tim Uhlmann',15],['Ricewolf',15],['Raphael',10],['Tyler Paulmann',10],['Hasefloxi',10],['URL Salzlos',10],['Marcel Gaming',10],['Griplow',10],['Philipp Übersteuern',5],['GhettoVieh',5],['Tannenzapfen',5],['Tarkinara',5],['David Salvatore',2],['Nictab',2],['Vesper Jupiter',2],['Priimex',2],['Jamie',2],['Mixo',2],['Justin',2],['K_P_8_4',2],['EliasW',2]];
 const PHASE_LABEL = { called: 'Aufruf', opening: 'Eröffnung', bidding: 'Überbieten', paused: 'Pausiert', sold: 'Verkauft', nobid: 'Kein Gebot' };
 const STATUS_LABEL = { offen: 'Offen', zurueck: 'Später', uebrig: 'Übrig', verkauft: 'Vergeben', fest: 'Fest' };
 const STAR = 'M12 2.4l2.95 6.1 6.7.8-4.95 4.6 1.3 6.6L12 17.2l-6 3.3 1.3-6.6L2.35 9.3l6.7-.8z';
@@ -444,13 +455,13 @@ const logoCls = id => logoURL(id) ? ' img' : '';
 const teamShort = n => String(n || '').replace(/[^A-Za-z0-9ÄÖÜäöü]/g, '').slice(0, 3).toUpperCase();
 const logoHTML = (id, name) => { const u = logoURL(id); return u ? `<img src="${esc(u)}" alt="">` : `<b>${esc(teamShort(name))}</b>`; };
 
-function mkDriver(name, stars) { return { id: 'd' + rid(), name, stars, status: 'offen', team: null, price: null, attempts: 0, via: null, info: [], prev: [] }; }
-function defaultSettings() { return { league: 'ZRL', subtitle: 'Fahrer-Auktion', openingSec: 120, countdownSec: 25, step: 1, reserve: 2, sLimit: true, teamBids: true, showBidCount: true, showCalls: true, showPool: false, showStats: true, overlayVisible: true, showProfile: true, exTeamRule: true, bgMode: 'always', bgDim: 0 }; }
+function mkDriver(name, value) { return { id: 'd' + rid(), name, value, status: 'offen', team: null, price: null, attempts: 0, via: null, info: [], prev: [] }; }
+function defaultSettings() { return { league: 'ZRL', subtitle: 'Fahrer-Auktion', openingSec: 120, countdownSec: 25, step: 1, reserve: 2, sLimit: true, teamBids: true, showBidCount: true, showCalls: true, showPool: false, showStats: true, overlayVisible: true, showProfile: true, exTeamRule: true, bgMode: 'always', bgDim: 0, tierS: 15, tierA: 10, tierB: 5 }; }
 function defaultState() {
   return { v: 1, settings: defaultSettings(), teams: DEFAULT_TEAMS.map(([id, name, budget]) => ({ id, name, budget })),
     drivers: DEFAULT_DRIVERS.map(([n, s]) => mkDriver(n, s)), lot: null, lotCounter: 0, history: [], scene: 'auction', reveal: { count: 0, at: 0 }, updatedAt: Date.now() };
 }
-function migrate(s) { s.settings = Object.assign(defaultSettings(), s.settings || {}); (s.drivers || []).forEach(d => { if (!Array.isArray(d.info)) d.info = []; if (!Array.isArray(d.prev)) d.prev = []; }); s.reveal = s.reveal || { count: 0, at: 0 }; s.history = s.history || []; return s; }
+function migrate(s) { s.settings = Object.assign(defaultSettings(), s.settings || {}); syncTiers(s.settings); (s.drivers || []).forEach(d => { if (!Array.isArray(d.info)) d.info = []; if (!Array.isArray(d.prev)) d.prev = []; if (!isFinite(d.value) || d.value === null) d.value = isFinite(d.stars) ? starsToValue(d.stars) : 0; delete d.stars; }); s.reveal = s.reveal || { count: 0, at: 0 }; s.history = s.history || []; return s; }
 function loadState() { try { const r = localStorage.getItem(STORE_KEY); if (r) { const s = JSON.parse(r); if (s && s.v === 1) return migrate(s); } } catch (e) {} return defaultState(); }
 let BC = null; try { BC = new BroadcastChannel('zrl-auktion'); } catch (e) {}
 function saveState(s) { s.updatedAt = Date.now(); const raw = JSON.stringify(s); try { localStorage.setItem(STORE_KEY, raw); } catch (e) {} try { BC && BC.postMessage(raw); } catch (e) {} return raw; }
@@ -466,7 +477,7 @@ const teamSpent = (s, id) => teamDrivers(s, id).reduce((a, d) => a + (+d.price |
 const teamRest = (s, id) => (+(teamById(s, id) || {}).budget || 0) - teamSpent(s, id);
 const teamFree = (s, id) => Math.max(0, 2 - teamDrivers(s, id).length);
 const teamMax = (s, id) => { const f = teamFree(s, id); return f <= 0 ? 0 : teamRest(s, id) - (f - 1) * (+s.settings.reserve || 0); };
-const hasS = (s, id) => teamDrivers(s, id).some(d => tierOf(d.stars) === 'S');
+const hasS = (s, id) => teamDrivers(s, id).some(d => tierOf(d.value) === 'S');
 const exTeams = (s, d) => ((d && d.prev) || []).filter(id => teamById(s, id));
 const isExTeam = (s, d, tid) => !!(s.settings.exTeamRule && d && (d.prev || []).includes(tid));
 const infoRows = info => (info || []).filter(r => Array.isArray(r) && String(r[0] || '').trim() && String(r[1] ?? '').trim());
@@ -488,7 +499,7 @@ function validateBid(s, team, amount) {
   const d = driverById(s, l.driverId);
   if (!isFinite(amount) || amount <= 0) return 'Bitte einen Betrag eingeben.';
   if (teamFree(s, team) <= 0) return `${t.name} hat keine freien Cockpits mehr.`;
-  if (s.settings.sLimit && tierOf(d.stars) === 'S' && hasS(s, team)) return `${t.name} hat schon einen S-Fahrer.`;
+  if (s.settings.sLimit && tierOf(d.value) === 'S' && hasS(s, team)) return `${t.name} hat schon einen S-Fahrer.`;
   if (isExTeam(s, d, team)) return `Ex-Team-Regel: ${d.name} darf nicht zu ${t.name} zurück.`;
   if (amount < l.minBid) return `Unter dem Mindestgebot von ${fmt(l.minBid)} Mio.`;
   const max = teamMax(s, team); if (amount > max + 1e-9) return `Zu hoch: ${t.name} kann höchstens ${fmt(max)} Mio bieten.`;
@@ -506,15 +517,29 @@ function recordBid(s, team, amount, reason, extra) {
 }
 function archive(s, result) {
   const l = s.lot, d = driverById(s, l.driverId);
-  s.history.push({ no: l.no, driverId: l.driverId, driverName: d ? d.name : '', tier: d ? tierOf(d.stars) : '', minBid: l.minBid, half: l.half, bids: l.bids.slice(), result, team: l.winner || null, price: l.price ?? null, at: Date.now() });
+  s.history.push({ no: l.no, driverId: l.driverId, driverName: d ? d.name : '', tier: d ? tierOf(d.value) : '', value: d ? d.value : null, minBid: l.minBid, half: l.half, bids: l.bids.slice(), result, team: l.winner || null, price: l.price ?? null, at: Date.now() });
 }
 function callDriver(s, id, drawn) {
   if (activeLot(s)) return 'Es läuft noch ein Los.';
   const d = driverById(s, id); if (!d || !(d.status === 'offen' || d.status === 'zurueck')) return 'Dieser Fahrer ist nicht verfügbar.';
-  const half = d.status === 'zurueck', base = TIERS[tierOf(d.stars)].min;
+  const half = d.status === 'zurueck', base = +d.value || 0;
   s.lotCounter = (s.lotCounter || 0) + 1;
-  s.lot = { no: s.lotCounter, driverId: id, phase: 'called', drawUntil: drawn ? Date.now() + 2800 : 0, half, minBid: half ? Math.ceil(base / 2) : base, bids: [], highest: null, leaders: [], tie: false, bidSeq: 0, calledAt: Date.now() };
+  s.lot = { no: s.lotCounter, driverId: id, phase: 'called', drawUntil: drawn ? Date.now() + 2800 : 0, half, minBid: half ? halfMin(base) : base, bids: [], highest: null, leaders: [], tie: false, bidSeq: 0, calledAt: Date.now() };
   d.attempts = (d.attempts || 0) + 1; s.scene = 'auction'; return null;
+}
+/* Mindestgebot des laufenden Loses von Hand ändern: vor oder während der Eröffnung */
+function setMinBid(s, v) {
+  const l = s.lot; if (!l || !['called', 'opening'].includes(l.phase)) return 'Das Mindestgebot lässt sich nur vor oder während der Eröffnung ändern.';
+  if (!isFinite(v) || v < 0) return 'Bitte eine gültige Zahl eingeben.';
+  if (l.phase === 'opening' && l.bids.some(b => b.valid && b.amount < v - 1e-9)) return `Es gibt schon gültige Gebote unter ${fmt(v)} Mio – höher setzen geht jetzt nicht mehr.`;
+  l.minBid = Math.round(v * 100) / 100; return null;
+}
+/* Marktwert eines Fahrers ändern; läuft gerade sein Aufruf, zieht das Mindestgebot mit */
+function setDriverValue(s, d, v) {
+  if (!d) return 'Fahrer nicht gefunden.'; if (!isFinite(v) || v < 0) return 'Bitte einen Marktwert ab 0 Mio eingeben.';
+  d.value = Math.round(v * 100) / 100;
+  const l = s.lot; if (l && l.driverId === d.id && l.phase === 'called') l.minBid = l.half ? halfMin(d.value) : d.value;
+  return null;
 }
 function drawDriver(s) {
   if (activeLot(s)) return 'Es läuft noch ein Los.';
@@ -564,14 +589,14 @@ function assignFixed(s, did, tid, price) {
 }
 function restrunde(s) {
   if (activeLot(s)) return 'Erst das laufende Los beenden.';
-  const pool = s.drivers.filter(d => ['offen', 'zurueck', 'uebrig'].includes(d.status)).sort((a, b) => a.stars - b.stars);
+  const pool = s.drivers.filter(d => ['offen', 'zurueck', 'uebrig'].includes(d.status)).sort((a, b) => a.value - b.value);
   if (!pool.length) return 'Keine übrigen Fahrer.';
   const order = s.teams.slice().reverse(); let n = 0;
   for (let round = 0; round < 2 && pool.length; round++) {
     for (const t of order) {
       if (!pool.length) break; if (teamFree(s, t.id) <= 0) continue;
       const k = pool.findIndex(d => !isExTeam(s, d, t.id)); if (k < 0) continue;
-      const d = pool.splice(k, 1)[0]; const price = Math.max(0, Math.min(Math.ceil(TIERS[tierOf(d.stars)].min / 2), teamRest(s, t.id)));
+      const d = pool.splice(k, 1)[0]; const price = Math.max(0, Math.min(halfMin(d.value), teamRest(s, t.id)));
       d.status = 'verkauft'; d.via = 'restrunde'; d.team = t.id; d.price = price; n++;
     }
   }
@@ -582,8 +607,8 @@ function parseDrivers(text) {
   const out = [], errs = [];
   text.split(/\r?\n/).forEach((line, i) => {
     if (!line.trim()) return; const parts = line.split(/[;\t]/);
-    const name = (parts[0] || '').trim(), stars = parseFloat(String(parts[1] || '').replace(',', '.'));
-    if (!name || !isFinite(stars)) errs.push(i + 1); else out.push([name, stars]);
+    const name = (parts[0] || '').trim(), value = parseFloat(String(parts[1] || '').replace(/mio\.?/i, '').replace(',', '.'));
+    if (!name || !isFinite(value) || value < 0) errs.push(i + 1); else out.push([name, value]);
   });
   return { out, errs };
 }
@@ -596,6 +621,7 @@ function findTeam(s, raw) {
   const c = s.teams.filter(x => normKey(x.name).startsWith(k) || x.id.startsWith(k));
   return k.length >= 3 && c.length === 1 ? c[0].id : null;
 }
+const VAL_LABEL = /^((markt)?wert|mindestgebot)$/i;
 const EX_LABEL = /^(ex[- ]?teams?|vorherige(\s+teams)?|fr(ü|ue)here\s+teams|letzte\s+teams|gesperrt(\s+f(ü|ue)r)?|gesperrte\s+(ex[- ]?)?teams|sperre|nicht\s+zu)$/i;
 /* Blöcke: 1. Zeile Fahrername, dann „Ex-Teams: A, B“ und beliebige „Bezeichnung: Wert“-Zeilen, Leerzeile trennt */
 function parseProfiles(s, text) {
@@ -607,14 +633,18 @@ function parseProfiles(s, text) {
     if (!blk) {
       const name = line.replace(/^(fahrer|name)\s*:\s*/i, '').trim(), k = normKey(name);
       const d = s.drivers.find(x => normKey(x.name) === k) || null;
-      blk = { d, info: [], prev: undefined };
+      blk = { d, info: [], prev: undefined, value: undefined };
       if (!d) errs.push(`Zeile ${no}: Fahrer „${name}“ nicht gefunden`);
       return;
     }
     const m = line.match(/^([^:]{1,40}):\s*(.*)$/);
     if (!m) return errs.push(`Zeile ${no}: Format ist „Bezeichnung: Wert“ – oder fehlt davor eine Leerzeile?`);
     const label = m[1].trim(), val = m[2].trim();
-    if (EX_LABEL.test(label)) {
+    if (VAL_LABEL.test(label)) {
+      if (!val) return;
+      const v = parseFloat(val.replace(/mio\.?/i, '').replace(',', '.'));
+      if (!isFinite(v) || v < 0) errs.push(`Zeile ${no}: Marktwert „${val}“ ist keine Zahl`); else blk.value = v;
+    } else if (EX_LABEL.test(label)) {
       const ids = [];
       val.split(/\s*(?:[,;/&+]|\bund\b)\s*/i).map(x => x.trim()).filter(x => x && !/^[-–—]$/.test(x) && !/^(keine?|none|kein team)$/i.test(x)).forEach(x => {
         const id = findTeam(s, x); if (!id) errs.push(`Zeile ${no}: Team „${x}“ unbekannt`); else if (!ids.includes(id)) ids.push(id);
@@ -626,7 +656,7 @@ function parseProfiles(s, text) {
   return { items, errs };
 }
 function profilesText(s) {
-  return s.drivers.map(d => [d.name, 'Ex-Teams: ' + exTeams(s, d).map(id => teamName(s, id)).join(', '), ...(d.info || []).map(r => `${r[0]}: ${r[1] ?? ''}`)].join('\n')).join('\n\n');
+  return s.drivers.map(d => [d.name, 'Marktwert: ' + fmt(d.value), 'Ex-Teams: ' + exTeams(s, d).map(id => teamName(s, id)).join(', '), ...(d.info || []).map(r => `${r[0]}: ${r[1] ?? ''}`)].join('\n')).join('\n\n');
 }
 function protocolCSV(s) {
   const rows = [['Los', 'Fahrer', 'Tier', 'Mindestgebot (Mio)', 'Zeit', 'Team', 'Gebot (Mio)', 'Phase', 'Quelle', 'Gültig', 'Grund', 'Ergebnis']];
@@ -636,7 +666,7 @@ function protocolCSV(s) {
     if (!h.bids.length) rows.push([h.no, h.driverName, h.tier, fmt(h.minBid), '', '', '', '', '', '', '', res]);
     h.bids.forEach(b => rows.push([h.no, h.driverName, h.tier, fmt(h.minBid), clock(b.t), teamName(s, b.team), fmt(b.amount), PH[b.phase] || b.phase, b.src === 'online' ? 'Teamchef online' : 'Leitung', b.valid ? 'ja' : 'nein', b.reason, res]));
   });
-  s.drivers.filter(d => d.via === 'fest' || d.via === 'restrunde').forEach(d => rows.push(['–', d.name, tierOf(d.stars), '', '', teamName(s, d.team), fmt(d.price), d.via === 'fest' ? 'Fest vergeben' : 'Restrunde', 'Leitung', '', '', '']));
+  s.drivers.filter(d => d.via === 'fest' || d.via === 'restrunde').forEach(d => rows.push(['–', d.name, tierOf(d.value), '', '', teamName(s, d.team), fmt(d.price), d.via === 'fest' ? 'Fest vergeben' : 'Restrunde', 'Leitung', '', '', '']));
   return rows.map(r => r.map(c => { c = String(c ?? ''); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';')).join('\n');
 }
 
@@ -718,7 +748,7 @@ function teamView(s, id, fb) {
   const t = teamById(s, id), now = Date.now(), l = s.lot, step = +s.settings.step || 1, max = teamMax(s, id);
   const assigned = s.drivers.filter(isAssigned).length;
   const v = { v: 1, league: s.settings.league, scene: s.scene, accept: !!s.settings.teamBids, step, fb: fb || null,
-    team: { id, name: t.name, budget: t.budget, spent: teamSpent(s, id), rest: teamRest(s, id), free: teamFree(s, id), max, drivers: teamDrivers(s, id).map(d => ({ name: d.name, stars: d.stars, price: d.price, via: d.via })) },
+    team: { id, name: t.name, budget: t.budget, spent: teamSpent(s, id), rest: teamRest(s, id), free: teamFree(s, id), max, drivers: teamDrivers(s, id).map(d => ({ name: d.name, value: d.value, tier: tierOf(d.value), price: d.price, via: d.via })) },
     stats: { sold: assigned, total: s.drivers.length }, lot: null };
   if (l) {
     const d = driverById(s, l.driverId), ph = l.phase, bp = ph === 'bidding' || ph === 'sold' || (ph === 'paused' && l.pausedPhase === 'bidding');
@@ -729,12 +759,12 @@ function teamView(s, id, fb) {
     else if (ph === 'paused') cant = 'Das Los ist gerade pausiert.';
     else if (ph !== 'opening' && ph !== 'bidding') cant = 'Gerade läuft keine Bietphase.';
     else if (teamFree(s, id) <= 0) cant = 'Deine Cockpits sind voll.';
-    else if (s.settings.sLimit && tierOf(d.stars) === 'S' && hasS(s, id)) cant = 'Du hast schon einen S-Fahrer.';
+    else if (s.settings.sLimit && tierOf(d.value) === 'S' && hasS(s, id)) cant = 'Du hast schon einen S-Fahrer.';
     else if (isExTeam(s, d, id)) cant = 'Ex-Team-Regel: Dieser Fahrer darf nicht zu deinem Team zurück.';
     else if (max < l.minBid) cant = `Dein Maxgebot (${fmt(max)} Mio) liegt unter dem Mindestgebot.`;
     else if (ph === 'bidding' && !l.tie && l.leaders.length === 1 && l.leaders[0] === id) cant = 'Du führst – du kannst dich nicht selbst überbieten.';
     v.lot = { no: l.no, phase: ph, minBid: l.minBid, half: !!l.half, bidSeq: l.bidSeq || 0,
-      driver: drawing ? null : { name: d.name, stars: d.stars, tier: tierOf(d.stars), info: infoRows(d.info), prev: exTeams(s, d).map(x => ({ id: x, name: teamName(s, x) })), rule: !!s.settings.exTeamRule },
+      driver: drawing ? null : { name: d.name, value: d.value, tier: tierOf(d.value), info: infoRows(d.info), prev: exTeams(s, d).map(x => ({ id: x, name: teamName(s, x) })), rule: !!s.settings.exTeamRule },
       highest: bp ? l.highest : null, tie: bp && ph !== 'sold' ? !!l.tie : false,
       leading: bp && ph !== 'sold' && !l.tie && l.leaders.length === 1 && l.leaders[0] === id, tiedIn: bp && ph !== 'sold' && !!l.tie && l.leaders.includes(id),
       won: ph === 'sold' && l.winner === id, price: ph === 'sold' ? l.price : null, openingCount: openingTeams(l), myOpening: mine,
@@ -764,9 +794,9 @@ async function unseal(room, bytes) { const pt = await crypto.subtle.decrypt({ na
 function publicView(s) {
   const now = Date.now(), order = s.teams.slice().reverse(), cnt = Math.min(s.reveal.count || 0, order.length), st = s.settings;
   const shown = new Set(order.slice(0, cnt).map(t => t.id));
-  const v = { v: 1, settings: { league: st.league, subtitle: st.subtitle, showStats: st.showStats, showPool: st.showPool, showBidCount: st.showBidCount, showCalls: st.showCalls, overlayVisible: st.overlayVisible, openingSec: st.openingSec, countdownSec: st.countdownSec, showProfile: st.showProfile, exTeamRule: st.exTeamRule, bgMode: st.bgMode, bgDim: st.bgDim },
+  const v = { v: 1, settings: { league: st.league, subtitle: st.subtitle, showStats: st.showStats, showPool: st.showPool, showBidCount: st.showBidCount, showCalls: st.showCalls, overlayVisible: st.overlayVisible, openingSec: st.openingSec, countdownSec: st.countdownSec, showProfile: st.showProfile, exTeamRule: st.exTeamRule, bgMode: st.bgMode, bgDim: st.bgDim, tierS: st.tierS, tierA: st.tierA, tierB: st.tierB },
     teams: s.teams.map(t => ({ id: t.id, name: t.name, budget: t.budget })),
-    drivers: s.drivers.map(d => { const a = isAssigned(d); return { id: d.id, name: d.name, stars: d.stars, status: d.status, price: a ? d.price : null, team: a && shown.has(d.team) ? d.team : null, via: null }; }),
+    drivers: s.drivers.map(d => { const a = isAssigned(d); return { id: d.id, name: d.name, value: d.value, status: d.status, price: a ? d.price : null, team: a && shown.has(d.team) ? d.team : null, via: null }; }),
     lot: null, lotCounter: s.lotCounter, scene: s.scene, reveal: { count: cnt, at: s.reveal.at || 0 }, history: [] };
   const l = s.lot;
   if (l) {
@@ -804,23 +834,18 @@ function makeTicker(ms) {
 
 /* ---------- Overlay ---------- */
 function mixColor(f) { const a = [63, 208, 255], b = [226, 60, 255]; return 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(',') + ')'; }
-function starsHTML(stars) {
-  let h = ''; const svg = c => `<svg viewBox="0 0 24 24"><path d="${STAR}" fill="${c}"/></svg>`;
-  for (let i = 0; i < 10; i++) { const c = mixColor(i / 9), full = stars >= i + 1, half = !full && stars >= i + 0.5; h += `<span class="st-wrap">${svg(full ? c : '#2C2866')}${half ? `<span class="st-half">${svg(c)}</span>` : ''}</span>`; }
-  return h;
-}
 function poolHTML(s, hideCur) {
   const cur = s.lot && !hideCur && s.lot.phase !== 'sold' && s.lot.phase !== 'nobid' ? s.lot.driverId : null;
-  const g = { S: [], A: [], B: [], C: [] }; s.drivers.forEach(d => g[tierOf(d.stars)].push(d));
+  const g = { S: [], A: [], B: [], C: [] }; s.drivers.forEach(d => g[tierOf(d.value)].push(d));
   return '<h4>Fahrerpool</h4>' + ['S', 'A', 'B', 'C'].filter(k => g[k].length).map(k => {
-    const chips = g[k].slice().sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name)).map(d => {
+    const chips = g[k].slice().sort((a, b) => b.value - a.value || a.name.localeCompare(b.name)).map(d => {
       let cls = '', extra = '';
       if (d.id === cur) cls = 'cur';
       else if (isAssigned(d)) { cls = 'sold'; extra = d.status === 'fest' ? 'fest' : fmt(d.price); }
       else if (d.status === 'zurueck' || d.status === 'uebrig') { cls = 'later'; extra = 'später'; }
       return `<span class="ov-chip ${cls}">${esc(d.name)}${extra ? `<em>${extra}</em>` : ''}</span>`;
     }).join('');
-    return `<div class="ov-tierhead"><b>${k}-Tier</b><span>ab ${TIERS[k].min} Mio</span></div><div class="ov-chips">${chips}</div>`;
+    return `<div class="ov-tierhead"><b>${k}-Tier</b><span>${k === 'C' ? 'unter ' + fmt(TIER_LIM.B) : 'ab ' + fmt(TIER_LIM[k])} Mio</span></div><div class="ov-chips">${chips}</div>`;
   }).join('');
 }
 function profileData(s, d) {
@@ -842,7 +867,7 @@ function revealHTML(s) {
     for (let k = 0; k < 2; k++) {
       const d = ds[k];
       if (!shown) slots += `<div class="rv-slot"><span class="n">• • •</span><span class="p">? Mio</span></div>`;
-      else if (d) slots += `<div class="rv-slot"><span class="n"><i class="rv-t">${tierOf(d.stars)}</i>${esc(d.name)}</span><span class="p">${d.status === 'fest' ? 'Fest · ' : ''}${fmt(d.price)} Mio</span></div>`;
+      else if (d) slots += `<div class="rv-slot"><span class="n"><i class="rv-t">${tierOf(d.value)}</i>${esc(d.name)}</span><span class="p">${d.status === 'fest' ? 'Fest · ' : ''}${fmt(d.price)} Mio</span></div>`;
       else slots += `<div class="rv-slot empty"><span class="n">Cockpit frei</span><span class="p">–</span></div>`;
     }
     const rest = shown ? `Restbudget ${fmt(teamRest(s, tm.id))} Mio` : `${lockSVG}Noch verdeckt`;
@@ -908,7 +933,7 @@ function createOverlay(host, opts = {}) {
     E.poolwrap.classList.toggle('ov-off', !st.showPool);
     if (st.showPool) setHTML(E.pool, poolHTML(S, l && l.drawUntil > t));
     E.lowerwrap.classList.toggle('ov-off', !l);
-    if (l) { const d = driverById(S, l.driverId); if (d) { const k = d.id + '|' + d.stars + '|' + l.minBid; if (k !== mem.starsKey) { mem.starsKey = k; E.stars.innerHTML = starsHTML(d.stars); setText(E.meta, `${fmt(d.stars)} Sterne · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (halbiert)' : ''}`); } } }
+    if (l) { const d = driverById(S, l.driverId); if (d) { const k = d.id + '|' + d.value + '|' + l.minBid + '|' + l.half; if (k !== mem.starsKey) { mem.starsKey = k; E.stars.innerHTML = `<em>Marktwert</em><b>${fmt(d.value)}</b><i>Mio</i>`; setText(E.meta, l.half ? `2. Versuch · Mindestgebot ${fmt(l.minBid)} Mio` : Math.abs(l.minBid - d.value) > 1e-9 ? `Mindestgebot ${fmt(l.minBid)} Mio` : ''); } } }
     const pd = l && driverById(S, l.driverId), ph = st.showProfile && pd && !rv && !(l.drawUntil > t) ? profileHTML(S, pd) : '';
     if (ph) { setHTML(E.prof, ph); if (mem.profFor !== pd.id) { mem.profFor = pd.id; restart(E.profwrap, 'in'); } } else mem.profFor = null;
     E.profwrap.classList.toggle('ov-off', !ph);
@@ -928,7 +953,7 @@ function createOverlay(host, opts = {}) {
     if (shuffling !== mem.shuffling) { mem.shuffling = shuffling; render(); }
     if (shuffling) { if (t - mem.shuffleAt > 85) { mem.shuffleAt = t; const pool = S.drivers.filter(x => x.status === 'offen' || x.status === 'zurueck' || x.id === d.id); setName((pool[Math.floor(Math.random() * pool.length)] || d).name); } }
     else setName(d.name);
-    const tier = tierOf(d.stars);
+    const tier = tierOf(d.value);
     setText(E.tierL, shuffling ? '?' : tier);
     E.stars.style.visibility = E.meta.style.visibility = shuffling ? 'hidden' : 'visible';
     const op = st.openingSec, cd = st.countdownSec;
@@ -940,7 +965,7 @@ function createOverlay(host, opts = {}) {
       case 'bidding': { const rem = Math.max(0, (l.countdownEnd - t) / 1000); eyebrow = `Los ${l.no} · Überbieten`; pill = l.tie ? 'Gleichstand' : 'Höchstgebot'; pcls = l.tie ? 'hot' : ''; amount = fmt(l.highest); sub = lockSVG + 'Bieter geheim'; frac = rem / cd; rtxt = String(Math.ceil(rem)); rlbl = 'Sekunden'; urgent = rem <= 5; if (st.showCalls) { if (rem <= 10 && rem > 5) call = 'Zum Ersten'; else if (rem <= 5 && rem > 0) call = 'Zum Zweiten'; } break; }
       case 'paused': { const rem = (l.pausedRemaining || 0) / 1000, o = l.pausedPhase === 'opening'; eyebrow = `Los ${l.no} · Pause`; pill = 'Pausiert'; pcls = 'dim'; amount = l.highest != null ? fmt(l.highest) : '???'; sub = 'Gleich geht es weiter'; frac = rem / (o ? op : cd); rtxt = o ? mmss(rem) : String(Math.ceil(rem)); mm = o; rlbl = 'Pause'; idle = true; break; }
       case 'sold': eyebrow = `Los ${l.no} · Zuschlag`; pill = 'Zuschlag'; pcls = 'hot'; amount = fmt(l.price); sub = lockSVG + 'Team bleibt geheim'; frac = 1; rtxt = lockSVG; rlbl = 'Geheim'; break;
-      case 'nobid': eyebrow = `Los ${l.no} · Kein Gebot`; pill = 'Kein Gebot'; pcls = 'dim'; amount = l.half ? 'Restrunde' : 'Später'; unit = ''; small = true; sub = l.half ? 'Wird am Ende zugeteilt' : `Neuer Versuch ab ${fmt(Math.ceil(TIERS[tier].min / 2))} Mio`; frac = 0; rtxt = '–'; idle = true; break;
+      case 'nobid': eyebrow = `Los ${l.no} · Kein Gebot`; pill = 'Kein Gebot'; pcls = 'dim'; amount = l.half ? 'Restrunde' : 'Später'; unit = ''; small = true; sub = l.half ? 'Wird am Ende zugeteilt' : `Neuer Versuch ab ${fmt(halfMin(d.value))} Mio`; frac = 0; rtxt = '–'; idle = true; break;
     }
     setText(E.eyebrow, eyebrow); setText(E.pill, pill); const pc = 'ov-pill ' + pcls; if (E.pill.className !== pc) E.pill.className = pc;
     setHTML(E.amount, esc(amount) + (unit ? `<span>${unit}</span>` : '')); E.amount.classList.toggle('small', small);
@@ -1135,13 +1160,13 @@ function startTeam() {
       else if (l.phase === 'paused') badge = '<span class="t-badge">Pausiert</span>';
       const ti = drawing ? null : timerInfo(l, t);
       box.innerHTML = `<h3>Los ${l.no} <small>${PHASE_LABEL[l.phase] || ''}</small></h3>
-        <div class="t-driver"><span class="c-tierbadge">${drawing ? '?' : d.tier}</span><div><b>${drawing ? '…' : esc(d.name)}</b><small>${drawing ? 'Der nächste Fahrer wird gezogen' : `${fmt(d.stars)} Sterne · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (halbiert)' : ''}`}</small></div></div>
+        <div class="t-driver"><span class="c-tierbadge">${drawing ? '?' : d.tier}</span><div><b>${drawing ? '…' : esc(d.name)}</b><small>${drawing ? 'Der nächste Fahrer wird gezogen' : `Marktwert ${fmt(d.value)} Mio · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (2. Versuch)' : ''}`}</small></div></div>
         ${drawing ? '' : tProfile(d, tm.id)}
         <div class="t-row">${state}${ti ? `<div class="t-timer ${ti.urgent ? 'urgent' : ''}" data-t><span>${ti.txt}</span><small>${ti.lbl}</small></div>` : ''}</div>
         <div class="t-state">${badge}${l.phase === 'opening' ? `<span class="c-hint" style="margin:0">${l.openingCount} ${l.openingCount === 1 ? 'Gebot' : 'Gebote'} eingegangen</span>` : ''}</div>`;
     }
     $('#tTeamInfo').innerHTML = `<div class="t-kv"><div><span>Restbudget</span><b>${fmt(tm.rest)} Mio</b></div><div><span>Maxgebot</span><b>${tm.free ? fmt(tm.max) + ' Mio' : '–'}</b></div><div><span>Cockpits frei</span><b>${tm.free} / 2</b></div><div><span>Ausgegeben</span><b>${fmt(tm.spent)} Mio</b></div></div>`
-      + (tm.drivers.length ? `<table><tbody>${tm.drivers.map(x => `<tr><td>${esc(x.name)} <small>${tierOf(x.stars)}-Tier</small></td><td class="num">${fmt(x.price)} Mio${x.via === 'fest' ? ' <small>fest</small>' : x.via === 'restrunde' ? ' <small>Restrunde</small>' : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="c-empty">Noch keine Fahrer.</p>');
+      + (tm.drivers.length ? `<table><tbody>${tm.drivers.map(x => `<tr><td>${esc(x.name)} <small>${x.tier}-Tier</small></td><td class="num">${fmt(x.price)} Mio${x.via === 'fest' ? ' <small>fest</small>' : x.via === 'restrunde' ? ' <small>Restrunde</small>' : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="c-empty">Noch keine Fahrer.</p>');
     const cant = $('#tCant'), can = l && l.canBid && !(l.drawUntil > t);
     cant.hidden = !!can; cant.textContent = !l ? 'Gerade läuft kein Los.' : (l.drawUntil > t ? 'Die Auslosung läuft.' : l.cantReason);
     $('#tBid').disabled = !can; $('#tAmt').disabled = !can; document.querySelectorAll('#tQuick button').forEach(b => b.disabled = !can);
@@ -1234,14 +1259,14 @@ function startControl() {
         <div class="c-form3"><select id="cFixD"></select><select id="cFixT"></select><input id="cFixP" type="number" min="0" step="1" placeholder="Preis in Mio"></div>
         <div class="c-row"><button id="cFix">Zuordnen</button></div>
         <p class="c-hint">Fest vergebene Fahrer kommen nicht in die Auktion und erscheinen erst bei der Enthüllung.</p></div>
-      <div class="c-card"><h3>Restrunde</h3><p class="c-hint">Teilt alle übrigen Fahrer automatisch zu: das schwächste Auto mit freiem Cockpit zuerst, jeweils der niedrigst bewertete Fahrer, zum halben Mindestgebot (höchstens Restbudget). Die Ex-Team-Regel wird dabei beachtet.</p><div class="c-row"><button id="cRest" class="confirm2">Restrunde ausführen</button></div></div>
+      <div class="c-card"><h3>Restrunde</h3><p class="c-hint">Teilt alle übrigen Fahrer automatisch zu: das schwächste Auto mit freiem Cockpit zuerst, jeweils der niedrigst bewertete Fahrer, zum halben Marktwert (höchstens Restbudget). Die Ex-Team-Regel wird dabei beachtet.</p><div class="c-row"><button id="cRest" class="confirm2">Restrunde ausführen</button></div></div>
       <div class="c-card"><h3>Fahrer-Infos &amp; Ex-Teams <small>jederzeit änderbar</small></h3>
-        <p class="c-hint">Ein Block pro Fahrer, Blöcke durch eine Leerzeile trennen. Erste Zeile: der Name wie in der Fahrerliste. Dann <code>Ex-Teams: Team A, Team B</code> und beliebig viele Zeilen <code>Bezeichnung: Wert</code> – zum Beispiel <code>Nationalität: Deutschland</code>. Leere Werte werden nicht angezeigt. Im Overlay erscheinen bis zu 6 Angaben rechts im Fahrerprofil, dazu die gesperrten Ex-Teams mit Logo.</p>
+        <p class="c-hint">Ein Block pro Fahrer, Blöcke durch eine Leerzeile trennen. Erste Zeile: der Name wie in der Fahrerliste. Dann <code>Marktwert: 15</code>, <code>Ex-Teams: Team A, Team B</code> und beliebig viele Zeilen <code>Bezeichnung: Wert</code> – zum Beispiel <code>Nationalität: Deutschland</code>. Leere Werte werden nicht angezeigt. Im Overlay erscheinen bis zu 6 Angaben rechts im Fahrerprofil, dazu die gesperrten Ex-Teams mit Logo.</p>
         <p class="c-hint">Ein Block ersetzt die Infos dieses Fahrers. Fahrer, die nicht im Text stehen, bleiben unverändert – du kannst also auch nur einen Teil einfügen.</p>
         <textarea id="cInfoText" rows="14" spellcheck="false"></textarea>
         <div class="c-row c-mt"><button id="cInfoApply" class="primary">Infos übernehmen</button><button id="cInfoReload">Gespeicherten Stand laden</button></div>
         <p class="c-msg c-infomsg" id="cInfoMsg"></p></div>
-      <div class="c-card"><h3>Fahrerliste bearbeiten</h3><p class="c-hint">Eine Zeile pro Fahrer: <code>Name;Sterne</code> – zum Beispiel <code>Ricewolf;9,5</code>. Geht nur, solange noch kein Los gelaufen ist.</p><textarea id="cDriverText" rows="10"></textarea><div class="c-row c-mt"><button id="cDriverApply" class="confirm2">Liste übernehmen</button></div></div>
+      <div class="c-card"><h3>Fahrerliste bearbeiten</h3><p class="c-hint">Eine Zeile pro Fahrer: <code>Name;Marktwert</code> in Mio – zum Beispiel <code>Ricewolf;15</code>. Der Marktwert ist zugleich das Mindestgebot. Die ganze Liste ersetzen geht nur, solange noch kein Los gelaufen ist – einzelne Marktwerte änderst du jederzeit direkt in der Tabelle oben.</p><textarea id="cDriverText" rows="10"></textarea><div class="c-row c-mt"><button id="cDriverApply" class="confirm2">Liste übernehmen</button></div></div>
     </section>
     <section class="c-tab" data-tab="reveal">
       <div class="c-card" id="cReveal"></div>
@@ -1267,6 +1292,8 @@ function startControl() {
         <div class="c-row c-mt"><button id="sAssetRe">Dateien neu prüfen</button></div></div>
       <div class="c-card"><h3>Regeln</h3>
         <div class="c-form2"><label>Eröffnung in Sekunden<input id="sOpen" type="number" min="10" step="5"></label><label>Countdown in Sekunden<input id="sCd" type="number" min="5" step="1"></label><label>Mindestschritt in Mio<input id="sStep" type="number" min="0.5" step="0.5"></label><label>Reserve fürs 2. Cockpit in Mio<input id="sRes" type="number" min="0" step="1"></label></div>
+        <p class="c-hint c-mt">Das Tier ergibt sich aus dem Marktwert. Ab welchem Wert ein Fahrer S, A oder B ist, legst du hier fest (darunter: C).</p>
+        <div class="c-form3"><label>S-Fahrer ab (Mio)<input id="sTierS" type="number" min="0" step="0.5"></label><label>A-Fahrer ab (Mio)<input id="sTierA" type="number" min="0" step="0.5"></label><label>B-Fahrer ab (Mio)<input id="sTierB" type="number" min="0" step="0.5"></label></div>
         <label class="c-check"><input type="checkbox" id="sSLimit"> Höchstens ein S-Fahrer pro Team</label>
         <label class="c-check"><input type="checkbox" id="sExTeam"> Ex-Team-Regel: Fahrer dürfen nicht zu ihren vorherigen Teams (im Tab „Fahrer“ eintragen)</label></div>
       <div class="c-card"><h3>Startbudgets <small>in Mio</small></h3><div class="c-form3" id="sBudgets"></div></div>
@@ -1346,24 +1373,28 @@ function startControl() {
     if (!l) {
       const avail = S.drivers.filter(d => d.status === 'offen' || d.status === 'zurueck');
       const sel = ui.selDriver && avail.some(d => d.id === ui.selDriver) ? ui.selDriver : (avail[0] || {}).id;
-      const opts = ['S', 'A', 'B', 'C'].map(k => { const g = avail.filter(d => tierOf(d.stars) === k).sort((a, b) => b.stars - a.stars); return g.length ? `<optgroup label="${k}-Tier">${g.map(d => `<option value="${d.id}" ${d.id === sel ? 'selected' : ''}>${esc(d.name)} · ${fmt(d.stars)} Sterne${d.status === 'zurueck' ? ' · 2. Versuch' : ''}</option>`).join('')}</optgroup>` : ''; }).join('');
+      const opts = ['S', 'A', 'B', 'C'].map(k => { const g = avail.filter(d => tierOf(d.value) === k).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name)); return g.length ? `<optgroup label="${k}-Tier">${g.map(d => `<option value="${d.id}" ${d.id === sel ? 'selected' : ''}>${esc(d.name)} · ${fmt(d.value)} Mio${d.status === 'zurueck' ? ' · 2. Versuch' : ''}</option>`).join('')}</optgroup>` : ''; }).join('');
       box.innerHTML = `<h3>Nächstes Los <small>Los ${S.lotCounter + 1}</small></h3>` + (avail.length
         ? `<select id="cSel">${opts}</select><div class="c-row c-mt"><button class="primary big" data-act="draw">Zufällig ziehen</button><button data-act="call">Ausgewählten aufrufen</button></div>`
         : `<div class="c-warn">Alle Fahrer sind durch. ${c.uebrig ? c.uebrig + ' Fahrer übrig – Restrunde im Tab „Fahrer“.' : 'Weiter mit der Enthüllung.'}</div>`)
         + `<p class="c-stat">Offen ${c.offen} · Später ${c.zurueck} · Übrig ${c.uebrig} · Vergeben ${c.verkauft + c.fest} von ${S.drivers.length}</p>`;
       return;
     }
-    const d = driverById(S, l.driverId), tier = tierOf(d.stars);
+    const d = driverById(S, l.driverId), tier = tierOf(d.value);
     let body = '';
     if (l.phase === 'called') body = `<div class="c-row c-mt"><button class="primary big" data-act="open">Eröffnung starten (${mmss(S.settings.openingSec)})</button><button data-act="cancel">Aufruf zurücknehmen</button></div>`;
     else if (l.phase === 'opening') body = `<div class="c-timerrow"><span class="c-timer" data-timer></span><span class="c-sub">Eröffnung läuft · ${openingTeams(l)} ${openingTeams(l) === 1 ? 'Team hat' : 'Teams haben'} geboten</span></div><div class="c-row"><button class="primary" data-act="endopen">Eröffnung jetzt beenden</button><button data-act="pause">Pause</button></div>`;
     else if (l.phase === 'bidding') body = `<div class="c-timerrow"><span class="c-timer" data-timer></span><span class="c-sub">Höchstgebot <b>${fmt(l.highest)} Mio</b> · ${leaderText(l)}</span></div><div class="c-row"><button class="confirm2" data-act="hammer">Zuschlag jetzt</button><button data-act="pause">Pause</button></div>`;
     else if (l.phase === 'paused') body = `<div class="c-timerrow"><span class="c-timer">${l.pausedPhase === 'opening' ? mmss(l.pausedRemaining / 1000) : Math.ceil(l.pausedRemaining / 1000)}</span><span class="c-sub">Pausiert (${l.pausedPhase === 'opening' ? 'Eröffnung' : 'Countdown'})${l.highest != null ? ` · Höchstgebot <b>${fmt(l.highest)} Mio</b> · ${leaderText(l)}` : ''}</span></div><div class="c-row"><button class="primary big" data-act="resume">Weiter</button></div>`;
     else if (l.phase === 'sold') { const t = teamById(S, l.winner); body = `<div class="c-result"><span>Verkauft an</span><b>${esc(t.name)}</b><span>für ${fmt(l.price)} Mio${l.tieBroken ? ' · Gleichstand, das schwächere Auto gewinnt' : ''}</span></div><p class="c-hint">Stille DM an ${esc(t.name)} schicken. Restbudget jetzt ${fmt(teamRest(S, t.id))} Mio, ${teamFree(S, t.id)} Cockpit(s) frei.</p><div class="c-row"><button class="primary big" data-act="next">Nächster Fahrer</button></div>`; }
-    else if (l.phase === 'nobid') body = `<div class="c-result"><span>Kein gültiges Gebot</span><b>${l.half ? 'Restrunde' : 'Zurück in den Topf'}</b><span>${l.half ? 'Der Fahrer wird in der Restrunde zugeteilt.' : 'Kommt nach den anderen Fahrern erneut, dann ab ' + fmt(Math.ceil(TIERS[tier].min / 2)) + ' Mio.'}</span></div><div class="c-row"><button class="primary big" data-act="next">Nächster Fahrer</button></div>`;
+    else if (l.phase === 'nobid') body = `<div class="c-result"><span>Kein gültiges Gebot</span><b>${l.half ? 'Restrunde' : 'Zurück in den Topf'}</b><span>${l.half ? 'Der Fahrer wird in der Restrunde zugeteilt.' : 'Kommt nach den anderen Fahrern erneut, dann ab ' + fmt(halfMin(d.value)) + ' Mio.'}</span></div><div class="c-row"><button class="primary big" data-act="next">Nächster Fahrer</button></div>`;
     const abort = ['opening', 'bidding', 'paused'].includes(l.phase) ? `<div class="c-row c-mt"><button class="danger confirm2 c-small" data-act="abort">Los abbrechen</button></div>` : '';
     const exs = exTeams(S, d), exl = exs.length ? `<div class="c-exline">${S.settings.exTeamRule ? 'Gesperrt (Ex-Teams)' : 'Vorherige Teams (Regel aus)'}: ${exs.map(id => esc(teamName(S, id))).join(', ')}</div>` : '';
-    box.innerHTML = `<h3>Los ${l.no} <small>${PHASE_LABEL[l.phase]}</small></h3><div class="c-lothead"><span class="c-tierbadge">${tier}</span><div><b>${esc(d.name)}</b><small>${fmt(d.stars)} Sterne · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (halbiert)' : ''}</small></div><span class="c-phase ph-${l.phase}">${PHASE_LABEL[l.phase]}</span></div>${exl}${body}${abort}`;
+    const base = l.half ? halfMin(d.value) : d.value;
+    const minEdit = ['called', 'opening'].includes(l.phase) ? `<div class="c-minrow"><label>Mindestgebot für dieses Los (Mio)<input id="cMinBid" type="number" min="0" step="0.5" value="${l.minBid}"></label><button data-act="setmin">Übernehmen</button>${Math.abs(l.minBid - base) > 1e-9 ? `<button data-act="resetmin">Zurück auf ${fmt(base)}</button>` : ''}</div>` : '';
+    const fa = document.activeElement, keep = fa && fa.id === 'cMinBid' ? fa.value : null;
+    box.innerHTML = `<h3>Los ${l.no} <small>${PHASE_LABEL[l.phase]}</small></h3><div class="c-lothead"><span class="c-tierbadge">${tier}</span><div><b>${esc(d.name)}</b><small>Marktwert ${fmt(d.value)} Mio · Mindestgebot ${fmt(l.minBid)} Mio${l.half ? ' (2. Versuch)' : ''}</small></div><span class="c-phase ph-${l.phase}">${PHASE_LABEL[l.phase]}</span></div>${exl}${minEdit}${body}${abort}`;
+    if (keep !== null) { const i = $('#cMinBid'); if (i) { i.value = keep; i.focus(); } }
     updateTimers();
   }
   function renderTeamBtns() {
@@ -1371,7 +1402,7 @@ function startControl() {
     $('#cTeams').innerHTML = S.teams.map(t => {
       const free = teamFree(S, t.id), max = teamMax(S, t.id);
       let note = free <= 0 ? 'Cockpits voll' : `max ${fmt(max)} · ${2 - free}/2`, dim = free <= 0 || (l && max < l.minBid);
-      if (d && S.settings.sLimit && tierOf(d.stars) === 'S' && hasS(S, t.id)) { dim = true; note = 'hat S-Fahrer'; }
+      if (d && S.settings.sLimit && tierOf(d.value) === 'S' && hasS(S, t.id)) { dim = true; note = 'hat S-Fahrer'; }
       if (l && l.phase === 'opening') { const ob = bestOpening(l, t.id); if (ob !== null) note = `geboten ${fmt(ob)} · max ${fmt(max)}`; }
       const ex = isExTeam(S, d, t.id); if (ex) { dim = true; note = 'Ex-Team · gesperrt'; }
       const lead = l && ['bidding', 'paused'].includes(l.phase) && l.leaders.includes(t.id);
@@ -1387,13 +1418,15 @@ function startControl() {
     $('#cTeamTable').innerHTML = `<table><thead><tr><th>Team</th><th class="num">Start</th><th class="num">Ausgegeben</th><th class="num">Rest</th><th class="num">Cockpits</th><th class="num">Maxgebot</th><th>Fahrer</th></tr></thead><tbody>${S.teams.map(t => { const ds = teamDrivers(S, t.id); return `<tr><td><b>${esc(t.name)}</b></td><td class="num">${fmt(t.budget)}</td><td class="num">${fmt(teamSpent(S, t.id))}</td><td class="num">${fmt(teamRest(S, t.id))}</td><td class="num">${ds.length}/2</td><td class="num">${teamFree(S, t.id) ? fmt(teamMax(S, t.id)) : '–'}</td><td>${ds.map(d => `${esc(d.name)} <small>${fmt(d.price)} Mio${d.via === 'fest' ? ', fest' : d.via === 'restrunde' ? ', Restrunde' : ''}</small>`).join('<br>') || '<small>–</small>'}</td></tr>`; }).join('')}</tbody></table>`;
   }
   function renderDriverTable() {
-    const ds = S.drivers.slice().sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
-    $('#cDriverTable').innerHTML = `<table><thead><tr><th>Fahrer</th><th class="num">Sterne</th><th>Tier</th><th>Status</th><th>Team</th><th class="num">Preis</th><th>Ex-Teams</th><th class="num">Infos</th></tr></thead><tbody>${ds.map(d => `<tr><td>${esc(d.name)}</td><td class="num">${fmt(d.stars)}</td><td>${tierOf(d.stars)}</td><td><span class="tag ${d.status}">${STATUS_LABEL[d.status]}</span></td><td>${d.team ? esc(teamName(S, d.team)) : '<small>–</small>'}</td><td class="num">${d.price != null ? fmt(d.price) + ' Mio' : '–'}</td><td>${exTeams(S, d).map(id => esc(teamName(S, id))).join(', ') || '<small>–</small>'}</td><td class="num">${infoRows(d.info).length || '<small>–</small>'}</td></tr>`).join('')}</tbody></table>`;
+    const ds = S.drivers.slice().sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+    const fa = document.activeElement, keep = fa && fa.classList && fa.classList.contains('c-val') ? { id: fa.dataset.id, v: fa.value } : null;
+    $('#cDriverTable').innerHTML = `<table><thead><tr><th>Fahrer</th><th class="num">Marktwert (Mio)</th><th>Tier</th><th>Status</th><th>Team</th><th class="num">Preis</th><th>Ex-Teams</th><th class="num">Infos</th></tr></thead><tbody>${ds.map(d => `<tr><td>${esc(d.name)}</td><td class="num">${isAssigned(d) ? fmt(d.value) : `<input class="c-val" type="number" min="0" step="0.5" data-id="${d.id}" value="${d.value}" title="Marktwert ändern – Enter oder Feld verlassen">`}</td><td>${tierOf(d.value)}</td><td><span class="tag ${d.status}">${STATUS_LABEL[d.status]}</span></td><td>${d.team ? esc(teamName(S, d.team)) : '<small>–</small>'}</td><td class="num">${d.price != null ? fmt(d.price) + ' Mio' : '–'}</td><td>${exTeams(S, d).map(id => esc(teamName(S, id))).join(', ') || '<small>–</small>'}</td><td class="num">${infoRows(d.info).length || '<small>–</small>'}</td></tr>`).join('')}</tbody></table>`;
+    if (keep) { const i = document.querySelector(`.c-val[data-id="${keep.id}"]`); if (i) { i.value = keep.v; i.focus(); } }
     const fd = $('#cFixD'), ft = $('#cFixT'), pd = fd.value, pt = ft.value;
-    fd.innerHTML = '<option value="">Fahrer wählen</option>' + ds.filter(d => !isAssigned(d)).map(d => `<option value="${d.id}">${esc(d.name)} (${tierOf(d.stars)})</option>`).join('');
+    fd.innerHTML = '<option value="">Fahrer wählen</option>' + ds.filter(d => !isAssigned(d)).map(d => `<option value="${d.id}">${esc(d.name)} (${fmt(d.value)} Mio)</option>`).join('');
     ft.innerHTML = '<option value="">Team wählen</option>' + S.teams.filter(t => teamFree(S, t.id) > 0).map(t => `<option value="${t.id}">${esc(t.name)} · Rest ${fmt(teamRest(S, t.id))}</option>`).join('');
     fd.value = pd; ft.value = pt;
-    const ta = $('#cDriverText'); if (!ui.driverDirty && document.activeElement !== ta) ta.value = S.drivers.map(d => `${d.name};${fmt(d.stars)}`).join('\n');
+    const ta = $('#cDriverText'); if (!ui.driverDirty && document.activeElement !== ta) ta.value = S.drivers.map(d => `${d.name};${fmt(d.value)}`).join('\n');
     const ti = $('#cInfoText'); if (!ui.infoDirty && document.activeElement !== ti) ti.value = profilesText(S);
   }
   function renderReveal() {
@@ -1413,6 +1446,7 @@ function startControl() {
     setV('sLeague', st.league); setV('sSub', st.subtitle); setV('sStats', st.showStats); setV('sPool', st.showPool); setV('sCount', st.showBidCount); setV('sCalls', st.showCalls);
     setV('sTeamBids', st.teamBids);
     setV('sOpen', st.openingSec); setV('sCd', st.countdownSec); setV('sStep', st.step); setV('sRes', st.reserve); setV('sSLimit', st.sLimit);
+    setV('sTierS', st.tierS); setV('sTierA', st.tierA); setV('sTierB', st.tierB);
     setV('sExTeam', st.exTeamRule); setV('sProfile', st.showProfile); setV('sBgMode', st.bgMode); setV('sBgDim', st.bgDim);
     renderAssets();
     const box = $('#sBudgets');
@@ -1425,7 +1459,7 @@ function startControl() {
     $('#sLogos').innerHTML = S.teams.map(t => { const u = logoURL(t.id), a = ASSETS['logo:' + t.id] || {}; return `<div class="c-logo ${u ? 'ok' : ''}"><span class="tl${logoCls(t.id)}">${logoHTML(t.id, t.name)}</span><b>${esc(t.name)}</b><small>${!u ? 'kein Logo' : a.builtin || a.url === null ? '✓ eingebaut' : '✓ ' + esc(a.file)}</small></div>`; }).join('');
   }
   onAsset(() => { ov.setState(S); renderAssets(); });
-  function renderAll() { renderHead(); renderLot(); renderTeamBtns(); renderLog(); renderTeamTable(); renderDriverTable(); renderReveal(); renderSettings(); if (typeof renderTeamchefs === 'function' && ui.tab === 'teamchefs') renderTeamchefs(); }
+  function renderAll() { syncTiers(S.settings); renderHead(); renderLot(); renderTeamBtns(); renderLog(); renderTeamTable(); renderDriverTable(); renderReveal(); renderSettings(); if (typeof renderTeamchefs === 'function' && ui.tab === 'teamchefs') renderTeamchefs(); }
   function updateTimers() {
     const l = S.lot, el = document.querySelector('#cLot [data-timer]'); if (!l || !el) return;
     const t = Date.now();
@@ -1466,7 +1500,17 @@ function startControl() {
     else if (a === 'hammer') act(hammer);
     else if (a === 'next') { act(nextLot); ui.team = null; msg(''); }
     else if (a === 'abort') act(abortLot, 'Los abgebrochen. Der Fahrer bleibt im Topf.');
+    else if (a === 'setmin') applyMin();
+    else if (a === 'resetmin') { const l = S.lot, d = l && driverById(S, l.driverId); if (d) act(s => setMinBid(s, l.half ? halfMin(d.value) : d.value), 'Mindestgebot zurückgesetzt.'); }
   });
+  function applyMin() { const i = $('#cMinBid'); if (!i) return; const v = parseFloat(String(i.value).replace(',', '.')); i.blur(); act(s => setMinBid(s, v), `Mindestgebot jetzt ${fmt(v)} Mio.`); }
+  $('#cLot').addEventListener('keydown', e => { if (e.target.id === 'cMinBid' && e.key === 'Enter') { e.preventDefault(); applyMin(); } });
+  $('#cDriverTable').addEventListener('change', e => {
+    const i = e.target.closest('.c-val'); if (!i) return;
+    const v = parseFloat(String(i.value).replace(',', '.')), d = driverById(S, i.dataset.id); i.blur();
+    act(s => setDriverValue(s, driverById(s, i.dataset.id), v), d ? `${d.name}: Marktwert ${fmt(v)} Mio.` : '');
+  });
+  $('#cDriverTable').addEventListener('keydown', e => { if (e.target.classList.contains('c-val') && e.key === 'Enter') { e.preventDefault(); e.target.dispatchEvent(new Event('change', { bubbles: true })); } });
   $('#cTeams').addEventListener('click', e => { const b = e.target.closest('button[data-team]'); if (!b) return; ui.team = ui.team === b.dataset.team ? null : b.dataset.team; renderTeamBtns(); $('#cAmt').focus(); });
   $('#cBid').addEventListener('click', submitBid);
   $('#cAmt').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitBid(); } });
@@ -1493,7 +1537,7 @@ function startControl() {
     if (r.errs.length) return say('Nichts übernommen – bitte korrigieren:\n' + r.errs.slice(0, 6).join('\n') + (r.errs.length > 6 ? `\n… und ${r.errs.length - 6} weitere` : ''), 'bad');
     if (!r.items.length) return say('Im Text steht kein Fahrer.', 'bad');
     const n = r.items.length, ex = r.items.filter(b => b.prev && b.prev.length).length;
-    if (act(s => { r.items.forEach(b => { const d = driverById(s, b.d.id); if (!d) return; d.info = b.info; if (b.prev !== undefined) d.prev = b.prev; }); })) {
+    if (act(s => { r.items.forEach(b => { const d = driverById(s, b.d.id); if (!d) return; d.info = b.info; if (b.prev !== undefined) d.prev = b.prev; if (b.value !== undefined) setDriverValue(s, d, b.value); }); })) {
       ui.infoDirty = false; $('#cInfoText').value = profilesText(S);
       say(`✓ Infos für ${n} ${n === 1 ? 'Fahrer' : 'Fahrer'} übernommen${ex ? `, davon ${ex} mit Ex-Teams` : ''}.`, 'good');
     }
@@ -1502,7 +1546,7 @@ function startControl() {
   $('#cDriverApply').addEventListener('click', e => {
     if (!armed(e.currentTarget)) return;
     const { out, errs } = parseDrivers($('#cDriverText').value);
-    if (errs.length) return toast('Zeile ' + errs.join(', ') + ': Format ist Name;Sterne', 'bad');
+    if (errs.length) return toast('Zeile ' + errs.join(', ') + ': Format ist Name;Marktwert (z. B. Ricewolf;15)', 'bad');
     if (!out.length) return toast('Die Liste ist leer.', 'bad');
     if (act(s => { if (s.history.length || s.lot || s.drivers.some(isAssigned)) return 'Nur vor dem ersten Los möglich – sonst erst „Auktion zurücksetzen“.'; const old = {}; s.drivers.forEach(d => { old[normKey(d.name)] = d; }); s.drivers = out.map(([n, st]) => { const d = mkDriver(n, st), o = old[normKey(n)]; if (o) { d.info = o.info || []; d.prev = o.prev || []; } return d; }); }, `${out.length} Fahrer übernommen.`)) ui.driverDirty = false;
   });
@@ -1543,7 +1587,7 @@ function startControl() {
     s.settings[key] = v;
   }));
   bindSet('sLeague', 'league'); bindSet('sSub', 'subtitle'); bindSet('sStats', 'showStats', 'bool'); bindSet('sPool', 'showPool', 'bool'); bindSet('sCount', 'showBidCount', 'bool'); bindSet('sCalls', 'showCalls', 'bool');
-  bindSet('sOpen', 'openingSec', 'num'); bindSet('sCd', 'countdownSec', 'num'); bindSet('sStep', 'step', 'num'); bindSet('sRes', 'reserve', 'num'); bindSet('sSLimit', 'sLimit', 'bool'); bindSet('sTeamBids', 'teamBids', 'bool');
+  bindSet('sOpen', 'openingSec', 'num'); bindSet('sCd', 'countdownSec', 'num'); bindSet('sStep', 'step', 'num'); bindSet('sRes', 'reserve', 'num'); bindSet('sSLimit', 'sLimit', 'bool'); bindSet('sTierS', 'tierS', 'num'); bindSet('sTierA', 'tierA', 'num'); bindSet('sTierB', 'tierB', 'num'); bindSet('sTeamBids', 'teamBids', 'bool');
   bindSet('sExTeam', 'exTeamRule', 'bool'); bindSet('sProfile', 'showProfile', 'bool'); bindSet('sBgMode', 'bgMode');
   $('#sBgDim').addEventListener('change', e => { const v = parseFloat(String(e.target.value).replace(',', '.')); act(s => { if (!isFinite(v) || v < 0 || v > 90) return 'Bitte 0 bis 90 eingeben.'; s.settings.bgDim = v; }); });
   $('#sAssetRe').addEventListener('click', () => { recheckAssets(); renderAssets(); toast('Dateien werden neu geprüft.'); });
